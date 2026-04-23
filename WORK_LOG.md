@@ -14,6 +14,10 @@
 - Completed Slice 3 camera pass: replaced the temporary distant view with a `CameraModeController` that supports mounted first-person and chase camera modes with runtime switching.
 - Tuned Slice 3 based on play feedback: reduced airborne behavior, added stronger ground adhesion and upright correction, and lowered the mounted camera feel so the bull reads heavy instead of floaty.
 - Fixed Slice 3 layout issues from playtesting: lifted the mounted view out of the bull body and expanded the arena floor and safety bounds to prevent wall-adjacent infinite falls.
+- Slice 3 approved after playtesting: chase camera works, the moat issue is gone, and mounted rolling motion reads correctly.
+- Implemented Slice 4: added a `RiderMountSystem` with stability drain, hold-on recovery, impact-based instability, and ejection thresholds.
+- Implemented Slice 5: added a `RiderRagdollSystem` that builds a placeholder ragdoll at runtime, throws it using animal momentum, and moves the camera to chase the crash payoff.
+- Added another first-person boost: mounted view now hides overlapping placeholder body geometry and adds speed/bob tuning for a more readable ride feel.
 
 ## Logging Rules
 

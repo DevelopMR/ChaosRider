@@ -1,5 +1,7 @@
 using ChaosRider.Animals;
 using ChaosRider.Cameras;
+using ChaosRider.Rider;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -91,7 +93,7 @@ namespace ChaosRider.Game
             body.centerOfMass = new Vector3(0f, -0.2f, 0.05f);
             body.maxAngularVelocity = 18f;
 
-            bull.AddComponent<AnimalPhysicsController>();
+            var animalController = bull.AddComponent<AnimalPhysicsController>();
             CreateCameraAnchors(bull.transform);
 
             var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
@@ -109,6 +111,19 @@ namespace ChaosRider.Game
             CreateHorn(bull.transform, new Vector3(-0.35f, 0.75f, 1.15f), new Vector3(0.15f, 0.15f, 0.75f));
             CreateHorn(bull.transform, new Vector3(0.35f, 0.75f, 1.15f), new Vector3(0.15f, 0.15f, 0.75f));
 
+            var mountedRider = CreateMountedRider(bull.transform);
+            var ragdollSystem = bull.AddComponent<RiderRagdollSystem>();
+            ragdollSystem.Configure(parent);
+
+            var mountSystem = bull.AddComponent<RiderMountSystem>();
+            mountSystem.Configure(
+                animalController,
+                body,
+                bull.transform.Find("MountedCameraAnchor"),
+                ragdollSystem,
+                mountedRider,
+                null);
+
             return bull;
         }
 
@@ -123,6 +138,46 @@ namespace ChaosRider.Game
             chaseTarget.transform.SetParent(parent);
             chaseTarget.transform.localPosition = new Vector3(0f, 1.25f, 0.85f);
             chaseTarget.transform.localRotation = Quaternion.identity;
+        }
+
+        private static Transform CreateMountedRider(Transform parent)
+        {
+            var riderRoot = new GameObject("MountedRider");
+            riderRoot.transform.SetParent(parent);
+            riderRoot.transform.localPosition = new Vector3(0f, 0.72f, -0.85f);
+            riderRoot.transform.localRotation = Quaternion.identity;
+
+            var torso = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            torso.name = "RiderTorso";
+            torso.transform.SetParent(riderRoot.transform);
+            torso.transform.localPosition = new Vector3(0f, 0.55f, 0f);
+            torso.transform.localRotation = Quaternion.identity;
+            torso.transform.localScale = new Vector3(0.45f, 0.55f, 0.35f);
+
+            var head = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+            head.name = "RiderHead";
+            head.transform.SetParent(riderRoot.transform);
+            head.transform.localPosition = new Vector3(0f, 1.25f, -0.02f);
+            head.transform.localScale = Vector3.one * 0.32f;
+
+            var leftLeg = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            leftLeg.name = "LeftLeg";
+            leftLeg.transform.SetParent(riderRoot.transform);
+            leftLeg.transform.localPosition = new Vector3(-0.18f, 0.05f, 0.15f);
+            leftLeg.transform.localScale = new Vector3(0.18f, 0.5f, 0.18f);
+
+            var rightLeg = GameObject.CreatePrimitive(PrimitiveType.Capsule);
+            rightLeg.name = "RightLeg";
+            rightLeg.transform.SetParent(riderRoot.transform);
+            rightLeg.transform.localPosition = new Vector3(0.18f, 0.05f, 0.15f);
+            rightLeg.transform.localScale = new Vector3(0.18f, 0.5f, 0.18f);
+
+            foreach (var collider in riderRoot.GetComponentsInChildren<Collider>())
+            {
+                Destroy(collider);
+            }
+
+            return riderRoot.transform;
         }
 
         private static void CreateSafetyFloor(Transform parent)
@@ -195,8 +250,22 @@ namespace ChaosRider.Game
             }
 
             var body = target.GetComponent<Rigidbody>();
+            var animalController = target.GetComponent<AnimalPhysicsController>();
             var mountedAnchor = target.Find("MountedCameraAnchor");
             var chaseTarget = target.Find("ChaseLookTarget");
+            var bullVisual = target.Find("Bull_Visual");
+            var riderVisual = target.Find("MountedRider");
+            var hiddenRenderers = new List<Renderer>();
+
+            if (bullVisual != null && bullVisual.TryGetComponent<Renderer>(out var bullRenderer))
+            {
+                hiddenRenderers.Add(bullRenderer);
+            }
+
+            if (riderVisual != null)
+            {
+                hiddenRenderers.AddRange(riderVisual.GetComponentsInChildren<Renderer>(true));
+            }
 
             var cameraController = mainCamera.GetComponent<CameraModeController>();
             if (cameraController == null)
@@ -204,7 +273,26 @@ namespace ChaosRider.Game
                 cameraController = mainCamera.gameObject.AddComponent<CameraModeController>();
             }
 
-            cameraController.Configure(target, body, mountedAnchor, chaseTarget);
+            cameraController.Configure(
+                target,
+                body,
+                animalController,
+                mountedAnchor,
+                chaseTarget,
+                hiddenRenderers.ToArray());
+
+            var mountSystem = target.GetComponent<RiderMountSystem>();
+            var ragdollSystem = target.GetComponent<RiderRagdollSystem>();
+            if (mountSystem != null)
+            {
+                mountSystem.Configure(
+                    animalController,
+                    body,
+                    mountedAnchor,
+                    ragdollSystem,
+                    riderVisual,
+                    cameraController);
+            }
         }
     }
 }

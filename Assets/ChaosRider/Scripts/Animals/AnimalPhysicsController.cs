@@ -6,6 +6,8 @@ namespace ChaosRider.Animals
     [RequireComponent(typeof(Rigidbody))]
     public class AnimalPhysicsController : MonoBehaviour
     {
+        public delegate void ImpactEventHandler(float impactForce, Collision collision);
+
         [Header("Config")]
         [SerializeField] private AnimalDefinition definition;
 
@@ -43,6 +45,9 @@ namespace ChaosRider.Animals
         public float PeakImpactForce { get; private set; }
         public float NormalizedSpeed { get; private set; }
         public bool IsGrounded { get; private set; }
+        public Rigidbody Body => body;
+        public float ForwardSpeed => Vector3.Dot(body.linearVelocity, transform.forward);
+        public event ImpactEventHandler Impacted;
 
         private void Awake()
         {
@@ -85,6 +90,7 @@ namespace ChaosRider.Animals
             var impactForce = collision.relativeVelocity.magnitude * body.mass;
             LastImpactForce = impactForce;
             PeakImpactForce = Mathf.Max(PeakImpactForce, impactForce);
+            Impacted?.Invoke(impactForce, collision);
         }
 
         private void ApplyDefinition()

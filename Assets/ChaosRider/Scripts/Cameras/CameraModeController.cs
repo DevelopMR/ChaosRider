@@ -15,8 +15,10 @@ namespace ChaosRider.Cameras
         [Header("Target")]
         [SerializeField] private Transform animalRoot;
         [SerializeField] private Rigidbody animalBody;
+        [SerializeField] private AnimalPhysicsController animalController;
         [SerializeField] private Transform mountedAnchor;
         [SerializeField] private Transform chaseLookTarget;
+        [SerializeField] private Renderer[] hiddenInMountedView;
 
         [Header("Mounted FPV")]
         [SerializeField] private Vector3 mountedOffset = new Vector3(0f, 0.48f, -0.18f);
@@ -26,6 +28,9 @@ namespace ChaosRider.Cameras
         [SerializeField] private float mountedRollInfluence = 0.8f;
         [SerializeField] private float mountedYawLookAhead = 0.6f;
         [SerializeField] private float mountedFieldOfView = 72f;
+        [SerializeField] private float mountedSpeedFieldOfViewBoost = 5f;
+        [SerializeField] private float mountedBobAmount = 0.08f;
+        [SerializeField] private float mountedBobSpeed = 7f;
 
         [Header("Chase Cam")]
         [SerializeField] private Vector3 chaseOffset = new Vector3(0f, 3.25f, -6.5f);
@@ -39,13 +44,27 @@ namespace ChaosRider.Cameras
 
         private Camera attachedCamera;
         private CameraMode currentMode;
+        private CameraMode lastAppliedMode = (CameraMode)(-1);
+        private float bobTime;
 
-        public void Configure(Transform targetRoot, Rigidbody targetBody, Transform mountedViewAnchor, Transform chaseViewTarget)
+        public void Configure(Transform targetRoot, Rigidbody targetBody, AnimalPhysicsController targetController, Transform mountedViewAnchor, Transform chaseViewTarget, Renderer[] hideInMountedView)
         {
             animalRoot = targetRoot;
             animalBody = targetBody;
+            animalController = targetController;
             mountedAnchor = mountedViewAnchor;
             chaseLookTarget = chaseViewTarget;
+            hiddenInMountedView = hideInMountedView;
+        }
+
+        public void ForceChaseView(Transform targetRoot, Transform lookTarget)
+        {
+            animalRoot = targetRoot;
+            chaseLookTarget = lookTarget;
+            animalBody = targetRoot != null ? targetRoot.GetComponent<Rigidbody>() : null;
+            animalController = null;
+            currentMode = CameraMode.Chase;
+            lastAppliedMode = (CameraMode)(-1);
         }
 
         private void Awake()
@@ -66,6 +85,8 @@ namespace ChaosRider.Cameras
                 currentMode = currentMode == CameraMode.MountedFirstPerson ? CameraMode.Chase : CameraMode.MountedFirstPerson;
             }
 
+            ApplyVisibilityForMode();
+
             if (currentMode == CameraMode.MountedFirstPerson)
             {
                 UpdateMountedCamera();
@@ -79,26 +100,33 @@ namespace ChaosRider.Cameras
         private void UpdateMountedCamera()
         {
             var anchor = mountedAnchor != null ? mountedAnchor : animalRoot;
-            var desiredPosition = anchor.TransformPoint(mountedOffset);
+            var bob = Vector3.up * (Mathf.Sin(bobTime) * mountedBobAmount * Mathf.Clamp01(animalController != null ? Mathf.Abs(animalController.ForwardSpeed) / 8f : 0f));
+            var desiredPosition = anchor.TransformPoint(mountedOffset) + bob;
             transform.position = DampPosition(transform.position, desiredPosition, mountedPositionSharpness);
 
             var localAngularVelocity = animalRoot.InverseTransformDirection(animalBody.angularVelocity);
             var pitch = -localAngularVelocity.x * mountedPitchInfluence;
             var roll = -localAngularVelocity.z * mountedRollInfluence;
             var yaw = localAngularVelocity.y * mountedYawLookAhead;
+            bobTime += Time.deltaTime * mountedBobSpeed * Mathf.Clamp01(animalController != null ? Mathf.Abs(animalController.ForwardSpeed) / 6f : 0f);
 
             var desiredRotation = anchor.rotation * Quaternion.Euler(pitch, yaw, roll);
             transform.rotation = DampRotation(transform.rotation, desiredRotation, mountedRotationSharpness);
 
             if (attachedCamera != null)
             {
-                attachedCamera.fieldOfView = Mathf.Lerp(attachedCamera.fieldOfView, mountedFieldOfView, 1f - Mathf.Exp(-10f * Time.deltaTime));
+                var speedBoost = animalController != null ? animalController.NormalizedSpeed * mountedSpeedFieldOfViewBoost : 0f;
+                attachedCamera.fieldOfView = Mathf.Lerp(attachedCamera.fieldOfView, mountedFieldOfView + speedBoost, 1f - Mathf.Exp(-10f * Time.deltaTime));
             }
         }
 
         private void UpdateChaseCamera()
         {
-            var desiredPosition = animalRoot.TransformPoint(chaseOffset);
+            var flattenedForward = Vector3.ProjectOnPlane(animalRoot.forward, Vector3.up);
+            var basisRotation = flattenedForward.sqrMagnitude > 0.001f
+                ? Quaternion.LookRotation(flattenedForward.normalized, Vector3.up)
+                : Quaternion.identity;
+            var desiredPosition = animalRoot.position + basisRotation * chaseOffset;
             transform.position = DampPosition(transform.position, desiredPosition, chasePositionSharpness);
 
             var lookTarget = chaseLookTarget != null ? chaseLookTarget.position : animalRoot.position + Vector3.up * 1.4f;
@@ -113,6 +141,27 @@ namespace ChaosRider.Cameras
             {
                 attachedCamera.fieldOfView = Mathf.Lerp(attachedCamera.fieldOfView, chaseFieldOfView, 1f - Mathf.Exp(-10f * Time.deltaTime));
             }
+        }
+
+        private void ApplyVisibilityForMode()
+        {
+            if (lastAppliedMode == currentMode || hiddenInMountedView == null)
+            {
+                return;
+            }
+
+            var shouldHide = currentMode == CameraMode.MountedFirstPerson;
+            foreach (var renderer in hiddenInMountedView)
+            {
+                if (renderer == null)
+                {
+                    continue;
+                }
+
+                renderer.enabled = !shouldHide;
+            }
+
+            lastAppliedMode = currentMode;
         }
 
         private static Vector3 DampPosition(Vector3 current, Vector3 target, float sharpness)

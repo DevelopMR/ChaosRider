@@ -17,6 +17,12 @@ This repo is being developed in small vertical slices. Each slice should be play
   - destructible environment reactions
   - rider ejection and ragdoll consequences
 
+## Current Prototype Status
+
+- `Slice 3` approved: mounted FPV and chase camera are working.
+- `Slices 4-5` now add rider stability, ejection triggers, and runtime placeholder ragdoll ejection.
+- Mounted FPV now hides overlapping placeholder body geometry in first-person to keep the ride readable.
+
 ## Working Rules
 
 1. Build the smallest playable version of each system first.

@@ -134,6 +134,7 @@ Test:
 
 - rider can lose stability during aggressive movement
 - mounting state transitions cleanly to ejection
+- `Status: Implemented`
 
 ### Slice 5: Ragdoll Ejection
 
@@ -148,6 +149,7 @@ Test:
 
 - ejection is reproducible and physically believable enough to be funny
 - ragdoll does not explode from setup issues
+- `Status: Implemented`
 
 ### Slice 6: Destructible Props
 
@@ -226,10 +228,10 @@ If a system is hard to tune in the Inspector, it is too expensive for this phase
 
 ## Immediate Next Step
 
-Start Slice 1 and Slice 2 together:
+Start Slice 6 and Slice 7 together:
 
-- create the `ChaosRider` folder structure
-- build `PrototypeArena`
-- implement the bull placeholder controller
+- add destructible fence, barrel, and wall props
+- track property damage, injury severity, and run-end summary
+- tune collisions so destruction and ejection feel connected
 
-This is the fastest route to a visible game instead of a paper architecture.
+This is the fastest route from a movement prototype to the full comedy loop.

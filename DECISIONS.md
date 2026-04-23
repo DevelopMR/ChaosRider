@@ -38,3 +38,17 @@ We will build in small vertical slices, test each slice, then commit locally bef
 
 Reason:
 This keeps risk low and progress visible.
+
+### Mounted First-Person Rendering
+
+Mounted first-person view hides overlapping placeholder rider and bull body geometry.
+
+Reason:
+For the prototype, first-person readability is more important than always rendering the full placeholder mesh.
+
+### Ejection Camera Behavior
+
+When the rider ejects, the camera should move to chase-style follow on the ragdoll instead of staying at the seat.
+
+Reason:
+The crash is the payoff, so the camera needs to preserve readability at the moment of failure.
