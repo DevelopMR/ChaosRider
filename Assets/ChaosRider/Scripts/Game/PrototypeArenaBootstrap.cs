@@ -116,7 +116,7 @@ namespace ChaosRider.Game
         {
             var mountedAnchor = new GameObject("MountedCameraAnchor");
             mountedAnchor.transform.SetParent(parent);
-            mountedAnchor.transform.localPosition = new Vector3(0f, 0.35f, 0.5f);
+            mountedAnchor.transform.localPosition = new Vector3(0f, 0.55f, -0.25f);
             mountedAnchor.transform.localRotation = Quaternion.identity;
 
             var chaseTarget = new GameObject("ChaseLookTarget");
