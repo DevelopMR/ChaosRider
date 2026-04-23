@@ -90,6 +90,7 @@ namespace ChaosRider.Game
             body.maxAngularVelocity = 18f;
 
             bull.AddComponent<AnimalPhysicsController>();
+            CreateCameraAnchors(bull.transform);
 
             var visual = GameObject.CreatePrimitive(PrimitiveType.Cube);
             visual.name = "Bull_Visual";
@@ -107,6 +108,19 @@ namespace ChaosRider.Game
             CreateHorn(bull.transform, new Vector3(0.35f, 0.75f, 1.15f), new Vector3(0.15f, 0.15f, 0.75f));
 
             return bull;
+        }
+
+        private static void CreateCameraAnchors(Transform parent)
+        {
+            var mountedAnchor = new GameObject("MountedCameraAnchor");
+            mountedAnchor.transform.SetParent(parent);
+            mountedAnchor.transform.localPosition = new Vector3(0f, 0.15f, 0.15f);
+            mountedAnchor.transform.localRotation = Quaternion.identity;
+
+            var chaseTarget = new GameObject("ChaseLookTarget");
+            chaseTarget.transform.SetParent(parent);
+            chaseTarget.transform.localPosition = new Vector3(0f, 1.25f, 0.85f);
+            chaseTarget.transform.localRotation = Quaternion.identity;
         }
 
         private static void CreateHorn(Transform parent, Vector3 localPosition, Vector3 localScale)
@@ -159,13 +173,22 @@ namespace ChaosRider.Game
                 cameraObject.AddComponent<AudioListener>();
             }
 
-            var followCamera = mainCamera.GetComponent<SimpleFollowCamera>();
-            if (followCamera == null)
+            if (mainCamera.TryGetComponent<SimpleFollowCamera>(out var oldFollowCamera))
             {
-                followCamera = mainCamera.gameObject.AddComponent<SimpleFollowCamera>();
+                Destroy(oldFollowCamera);
             }
 
-            followCamera.SetTarget(target);
+            var body = target.GetComponent<Rigidbody>();
+            var mountedAnchor = target.Find("MountedCameraAnchor");
+            var chaseTarget = target.Find("ChaseLookTarget");
+
+            var cameraController = mainCamera.GetComponent<CameraModeController>();
+            if (cameraController == null)
+            {
+                cameraController = mainCamera.gameObject.AddComponent<CameraModeController>();
+            }
+
+            cameraController.Configure(target, body, mountedAnchor, chaseTarget);
         }
     }
 }
