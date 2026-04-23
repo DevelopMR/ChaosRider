@@ -61,15 +61,17 @@ namespace ChaosRider.Game
             ground.name = "Arena_Ground";
             ground.transform.SetParent(parent);
             ground.transform.position = Vector3.zero;
-            ground.transform.localScale = new Vector3(5f, 1f, 5f);
+            ground.transform.localScale = new Vector3(12f, 1f, 12f);
+
+            CreateSafetyFloor(parent);
         }
 
         private static void CreateBounds(Transform parent)
         {
-            CreateWall(parent, "North_Wall", new Vector3(0f, 2f, 52f), new Vector3(105f, 4f, 2f));
-            CreateWall(parent, "South_Wall", new Vector3(0f, 2f, -52f), new Vector3(105f, 4f, 2f));
-            CreateWall(parent, "East_Wall", new Vector3(52f, 2f, 0f), new Vector3(2f, 4f, 105f));
-            CreateWall(parent, "West_Wall", new Vector3(-52f, 2f, 0f), new Vector3(2f, 4f, 105f));
+            CreateWall(parent, "North_Wall", new Vector3(0f, 2f, 48f), new Vector3(96f, 4f, 2f));
+            CreateWall(parent, "South_Wall", new Vector3(0f, 2f, -48f), new Vector3(96f, 4f, 2f));
+            CreateWall(parent, "East_Wall", new Vector3(48f, 2f, 0f), new Vector3(2f, 4f, 96f));
+            CreateWall(parent, "West_Wall", new Vector3(-48f, 2f, 0f), new Vector3(2f, 4f, 96f));
         }
 
         private static GameObject CreateBull(Transform parent)
@@ -114,13 +116,27 @@ namespace ChaosRider.Game
         {
             var mountedAnchor = new GameObject("MountedCameraAnchor");
             mountedAnchor.transform.SetParent(parent);
-            mountedAnchor.transform.localPosition = new Vector3(0f, -0.15f, 0.3f);
+            mountedAnchor.transform.localPosition = new Vector3(0f, 0.35f, 0.5f);
             mountedAnchor.transform.localRotation = Quaternion.identity;
 
             var chaseTarget = new GameObject("ChaseLookTarget");
             chaseTarget.transform.SetParent(parent);
             chaseTarget.transform.localPosition = new Vector3(0f, 1.25f, 0.85f);
             chaseTarget.transform.localRotation = Quaternion.identity;
+        }
+
+        private static void CreateSafetyFloor(Transform parent)
+        {
+            var floor = GameObject.CreatePrimitive(PrimitiveType.Cube);
+            floor.name = "Arena_SafetyFloor";
+            floor.transform.SetParent(parent);
+            floor.transform.position = new Vector3(0f, -8f, 0f);
+            floor.transform.localScale = new Vector3(140f, 1f, 140f);
+
+            if (floor.TryGetComponent<MeshRenderer>(out var renderer))
+            {
+                renderer.enabled = false;
+            }
         }
 
         private static void CreateHorn(Transform parent, Vector3 localPosition, Vector3 localScale)
