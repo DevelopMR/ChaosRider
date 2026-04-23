@@ -19,7 +19,7 @@ namespace ChaosRider.Cameras
         [SerializeField] private Transform chaseLookTarget;
 
         [Header("Mounted FPV")]
-        [SerializeField] private Vector3 mountedOffset = new Vector3(0f, 0.62f, 0f);
+        [SerializeField] private Vector3 mountedOffset = new Vector3(0f, 0.48f, -0.18f);
         [SerializeField] private float mountedPositionSharpness = 18f;
         [SerializeField] private float mountedRotationSharpness = 14f;
         [SerializeField] private float mountedPitchInfluence = 0.55f;
