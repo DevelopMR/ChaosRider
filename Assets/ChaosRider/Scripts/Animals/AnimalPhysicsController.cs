@@ -25,9 +25,16 @@ namespace ChaosRider.Animals
         [SerializeField] private float lateralKick = 4f;
         [SerializeField] private float chaosJitterTorque = 6f;
         [SerializeField] private Vector2 buckIntervalRange = new Vector2(0.3f, 0.75f);
+        [SerializeField] private float groundedBuckMultiplier = 0.45f;
+        [SerializeField] private float airControlMultiplier = 0.2f;
+        [SerializeField] private float uprightForce = 10f;
+        [SerializeField] private float groundAdhesionForce = 35f;
+        [SerializeField] private float extraFallGravity = 18f;
+        [SerializeField] private float groundCheckDistance = 1.2f;
 
         [Header("Debug")]
         [SerializeField] private bool drawVelocityRay = true;
+        [SerializeField] private bool drawGroundRay = true;
 
         private Rigidbody body;
         private float nextBuckTime;
@@ -35,6 +42,7 @@ namespace ChaosRider.Animals
         public float LastImpactForce { get; private set; }
         public float PeakImpactForce { get; private set; }
         public float NormalizedSpeed { get; private set; }
+        public bool IsGrounded { get; private set; }
 
         private void Awake()
         {
@@ -48,9 +56,12 @@ namespace ChaosRider.Animals
             var throttle = ReadThrottle();
             var steering = ReadSteering();
 
+            UpdateGrounding();
+
             ApplyDrive(throttle);
             ApplySteering(steering);
             ApplyChaos(throttle);
+            ApplyStabilityForces();
             ClampForwardSpeed();
         }
 
@@ -62,6 +73,11 @@ namespace ChaosRider.Animals
             }
 
             Debug.DrawRay(transform.position + Vector3.up * 1.2f, body.linearVelocity, Color.red);
+
+            if (drawGroundRay)
+            {
+                Debug.DrawRay(transform.position + Vector3.up * 0.1f, Vector3.down * groundCheckDistance, IsGrounded ? Color.green : Color.yellow);
+            }
         }
 
         private void OnCollisionEnter(Collision collision)
@@ -122,14 +138,15 @@ namespace ChaosRider.Animals
 
         private void ApplySteering(float steering)
         {
+            var steeringMultiplier = IsGrounded ? 1f : airControlMultiplier;
             var steerScale = Mathf.Lerp(1.2f, 0.35f, NormalizedSpeed);
-            var torque = turnTorque * steering * steerScale * Time.fixedDeltaTime;
+            var torque = turnTorque * steering * steerScale * steeringMultiplier * Time.fixedDeltaTime;
             body.AddTorque(Vector3.up * torque, ForceMode.VelocityChange);
 
             if (Mathf.Abs(steering) > 0.01f)
             {
                 var sidewaysVelocity = Vector3.Dot(body.linearVelocity, transform.right);
-                body.AddForce(-transform.right * sidewaysVelocity * steeringAssist, ForceMode.Acceleration);
+                body.AddForce(-transform.right * sidewaysVelocity * steeringAssist * steeringMultiplier, ForceMode.Acceleration);
             }
         }
 
@@ -139,8 +156,9 @@ namespace ChaosRider.Animals
             {
                 var impulseScale = Mathf.Lerp(0.85f, 1.35f, Random.value);
                 var lateralDirection = Random.value > 0.5f ? 1f : -1f;
+                var upwardScale = IsGrounded ? groundedBuckMultiplier : groundedBuckMultiplier * 0.2f;
 
-                body.AddForce(Vector3.up * buckImpulse * impulseScale, ForceMode.Impulse);
+                body.AddForce(Vector3.up * buckImpulse * impulseScale * upwardScale, ForceMode.Impulse);
                 body.AddForce(transform.right * lateralKick * lateralDirection, ForceMode.Impulse);
                 body.AddTorque(transform.right * buckTorque * lateralDirection, ForceMode.Impulse);
                 body.AddTorque(transform.forward * (buckTorque * 0.35f * -lateralDirection), ForceMode.Impulse);
@@ -148,13 +166,34 @@ namespace ChaosRider.Animals
                 ScheduleNextBuck();
             }
 
-            var jitter = Mathf.Lerp(0.6f, 1.3f, Mathf.Abs(throttle));
+            var jitter = Mathf.Lerp(0.6f, 1.3f, Mathf.Abs(throttle)) * (IsGrounded ? 1f : airControlMultiplier);
             var randomTorque = new Vector3(
                 Random.Range(-chaosJitterTorque, chaosJitterTorque),
                 Random.Range(-chaosJitterTorque * 0.6f, chaosJitterTorque * 0.6f),
                 Random.Range(-chaosJitterTorque, chaosJitterTorque));
 
             body.AddRelativeTorque(randomTorque * jitter * Time.fixedDeltaTime, ForceMode.Acceleration);
+        }
+
+        private void ApplyStabilityForces()
+        {
+            var currentUp = transform.up;
+            var uprightTorque = Vector3.Cross(currentUp, Vector3.up) * uprightForce;
+            body.AddTorque(uprightTorque, ForceMode.Acceleration);
+
+            if (IsGrounded && body.linearVelocity.y <= 1.5f)
+            {
+                body.AddForce(Vector3.down * groundAdhesionForce, ForceMode.Acceleration);
+                return;
+            }
+
+            body.AddForce(Physics.gravity.normalized * extraFallGravity, ForceMode.Acceleration);
+        }
+
+        private void UpdateGrounding()
+        {
+            var rayOrigin = transform.position + Vector3.up * 0.1f;
+            IsGrounded = Physics.Raycast(rayOrigin, Vector3.down, groundCheckDistance, ~0, QueryTriggerInteraction.Ignore);
         }
 
         private void ClampForwardSpeed()
