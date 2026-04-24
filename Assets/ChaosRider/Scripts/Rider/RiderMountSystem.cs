@@ -27,12 +27,13 @@ namespace ChaosRider.Rider
         [SerializeField] private float recoveryPerSecond = 7f;
         [SerializeField] private float holdOnRecoveryPerSecond = 20f;
         [SerializeField] private float balanceDrain = 1.4f;
-        [SerializeField] private float surgeDrain = 0.45f;
+        [SerializeField] private float surgeDrain = 0.22f;
+        [SerializeField] private float surgeGraceAcceleration = 5f;
         [SerializeField] private float slipDrain = 0.8f;
         [SerializeField] private float impactDrainMultiplier = 0.0035f;
         [SerializeField] private float instantEjectImpactForce = 9000f;
         [SerializeField] private float lowStabilityEjectDelay = 0.45f;
-        [SerializeField] private float ejectionImpulseMultiplier = 0.55f;
+        [SerializeField] private float ejectionImpulseMultiplier = 0.22f;
         [SerializeField] private float upwardEjectionImpulse = 7f;
         [SerializeField] private Key holdOnKey = Key.Space;
         [SerializeField] private Key debugEjectKey = Key.E;
@@ -122,11 +123,12 @@ namespace ChaosRider.Rider
             var localAngularVelocity = transform.InverseTransformDirection(animalBody.angularVelocity);
             var rollPitchStress = new Vector2(localAngularVelocity.x, localAngularVelocity.z).magnitude;
             var forwardSpeed = animalController.ForwardSpeed;
-            var forwardAcceleration = Mathf.Abs(forwardSpeed - previousForwardSpeed) / Mathf.Max(Time.deltaTime, 0.0001f);
+            var signedForwardAcceleration = (forwardSpeed - previousForwardSpeed) / Mathf.Max(Time.deltaTime, 0.0001f);
+            var decelerationSpike = Mathf.Max(0f, -signedForwardAcceleration - surgeGraceAcceleration);
             var lateralSlip = Mathf.Abs(Vector3.Dot(animalBody.linearVelocity, transform.right));
 
             var balanceStress = rollPitchStress * balanceDrain * Time.deltaTime;
-            var surgeStress = forwardAcceleration * surgeDrain * 0.1f * Time.deltaTime;
+            var surgeStress = decelerationSpike * surgeDrain * 0.1f * Time.deltaTime;
             var slipStress = lateralSlip * slipDrain * Time.deltaTime;
             var recovery = (holdOn ? holdOnRecoveryPerSecond : recoveryPerSecond) * Time.deltaTime;
             var slowAndCenteredBonus = Mathf.Clamp01(1f - Mathf.Abs(forwardSpeed) / 6f) * Mathf.Clamp01(1f - lateralSlip / 2f) * 6f * Time.deltaTime;

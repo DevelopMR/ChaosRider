@@ -189,7 +189,8 @@ namespace ChaosRider.Animals
                 return;
             }
 
-            body.AddTorque(Vector3.up * (steeringInput * gaitProfile.idleTurnTorque * Time.fixedDeltaTime), ForceMode.VelocityChange);
+            var yawDamping = -body.angularVelocity.y * 0.35f;
+            body.AddTorque(Vector3.up * (steeringInput * gaitProfile.idleTurnTorque + yawDamping), ForceMode.Acceleration);
         }
 
         private void ApplyIdleSettling()
