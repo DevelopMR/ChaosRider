@@ -189,6 +189,22 @@ namespace ChaosRider.Animals
                 return;
             }
 
+            var planarVelocity = Vector3.ProjectOnPlane(body.linearVelocity, Vector3.up);
+            if (planarVelocity.magnitude <= gaitProfile.idlePivotPlanarSpeedThreshold)
+            {
+                var yawStep = steeringInput * gaitProfile.idlePivotDegreesPerSecond * Time.fixedDeltaTime;
+                var pivotRotation = Quaternion.AngleAxis(yawStep, Vector3.up) * body.rotation;
+                body.MoveRotation(pivotRotation);
+
+                var localAngularVelocity = transform.InverseTransformDirection(body.angularVelocity);
+                var correctedAngularVelocity = new Vector3(
+                    localAngularVelocity.x * 0.2f,
+                    localAngularVelocity.y,
+                    localAngularVelocity.z * 0.2f);
+                body.angularVelocity = transform.TransformDirection(correctedAngularVelocity);
+                body.linearVelocity = new Vector3(body.linearVelocity.x * 0.96f, body.linearVelocity.y, body.linearVelocity.z * 0.96f);
+            }
+
             var yawDamping = -body.angularVelocity.y * 0.35f;
             body.AddTorque(Vector3.up * (steeringInput * gaitProfile.idleTurnTorque + yawDamping), ForceMode.Acceleration);
         }

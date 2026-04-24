@@ -28,6 +28,8 @@ namespace ChaosRider.Animals
         public float rearCounterSteerForce = 4f;
         public float idleTurnTorque = 26f;
         public float lowSpeedSteerScale = 0.55f;
+        public float idlePivotDegreesPerSecond = 95f;
+        public float idlePivotPlanarSpeedThreshold = 0.65f;
 
         [Header("Body Reaction")]
         public float frontSupportBias = 1.08f;
