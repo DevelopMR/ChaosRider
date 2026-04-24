@@ -160,6 +160,11 @@ namespace ChaosRider.Game
             head.transform.localPosition = new Vector3(0f, 1.25f, -0.02f);
             head.transform.localScale = Vector3.one * 0.32f;
 
+            var headCameraAnchor = new GameObject("HeadCameraAnchor");
+            headCameraAnchor.transform.SetParent(head.transform);
+            headCameraAnchor.transform.localPosition = new Vector3(0f, 0.03f, 0.12f);
+            headCameraAnchor.transform.localRotation = Quaternion.identity;
+
             var leftLeg = GameObject.CreatePrimitive(PrimitiveType.Capsule);
             leftLeg.name = "LeftLeg";
             leftLeg.transform.SetParent(riderRoot.transform);
@@ -251,7 +256,11 @@ namespace ChaosRider.Game
 
             var body = target.GetComponent<Rigidbody>();
             var animalController = target.GetComponent<AnimalPhysicsController>();
-            var mountedAnchor = target.Find("MountedCameraAnchor");
+            var mountedAnchor = target.Find("MountedRider/RiderHead/HeadCameraAnchor");
+            if (mountedAnchor == null)
+            {
+                mountedAnchor = target.Find("MountedCameraAnchor");
+            }
             var chaseTarget = target.Find("ChaseLookTarget");
             var bullVisual = target.Find("Bull_Visual");
             var riderVisual = target.Find("MountedRider");
