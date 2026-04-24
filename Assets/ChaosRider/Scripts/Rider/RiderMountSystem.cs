@@ -11,6 +11,7 @@ namespace ChaosRider.Rider
         [Header("References")]
         [SerializeField] private AnimalPhysicsController animalController;
         [SerializeField] private Rigidbody animalBody;
+        [SerializeField] private GaitEngine gaitEngine;
         [SerializeField] private Transform seatAnchor;
         [SerializeField] private RiderRagdollSystem ragdollSystem;
         [SerializeField] private CameraModeController cameraController;
@@ -21,6 +22,10 @@ namespace ChaosRider.Rider
         [SerializeField] private float riderRotationSharpness = 10f;
         [SerializeField] private float riderLean = 12f;
         [SerializeField] private float riderRoll = 16f;
+        [SerializeField] private float gaitRideHeight = 0.045f;
+        [SerializeField] private float gaitForeAftShift = 0.03f;
+        [SerializeField] private float gaitPitchCoupling = 5f;
+        [SerializeField] private float gaitRollCoupling = 4f;
 
         [Header("Stability")]
         [SerializeField] private float maxStability = 100f;
@@ -57,6 +62,7 @@ namespace ChaosRider.Rider
 
             animalController = controller;
             animalBody = body;
+            gaitEngine = controller != null ? controller.GetComponent<GaitEngine>() : null;
             seatAnchor = mountAnchor;
             ragdollSystem = riderRagdollSystem;
             mountedRiderRoot = riderVisualRoot;
@@ -108,11 +114,27 @@ namespace ChaosRider.Rider
             }
 
             var desiredPosition = seatAnchor.position;
+            if (gaitEngine != null && gaitEngine.CurrentGait == GaitType.DogTrot)
+            {
+                var gaitCycle = gaitEngine.GaitPhase * Mathf.PI * 2f;
+                var beatLift = Mathf.Abs(Mathf.Sin(gaitCycle));
+                var foreAftShift = Mathf.Sin(gaitCycle - Mathf.PI * 0.25f);
+                desiredPosition += seatAnchor.up * ((beatLift - 0.5f) * gaitRideHeight);
+                desiredPosition += seatAnchor.forward * (foreAftShift * gaitForeAftShift);
+            }
+
             mountedRiderRoot.position = Vector3.Lerp(mountedRiderRoot.position, desiredPosition, 1f - Mathf.Exp(-riderPositionSharpness * Time.deltaTime));
 
             var localAngularVelocity = transform.InverseTransformDirection(animalBody.angularVelocity);
             var leanPitch = -localAngularVelocity.x * riderLean;
             var leanRoll = -localAngularVelocity.z * riderRoll;
+            if (gaitEngine != null && gaitEngine.CurrentGait == GaitType.DogTrot)
+            {
+                var gaitCycle = gaitEngine.GaitPhase * Mathf.PI * 2f;
+                leanPitch += Mathf.Sin(gaitCycle - Mathf.PI * 0.25f) * gaitPitchCoupling;
+                leanRoll += -Mathf.Sin(gaitCycle) * gaitRollCoupling;
+            }
+
             var desiredRotation = seatAnchor.rotation * Quaternion.Euler(leanPitch, 0f, leanRoll);
             mountedRiderRoot.rotation = Quaternion.Slerp(mountedRiderRoot.rotation, desiredRotation, 1f - Mathf.Exp(-riderRotationSharpness * Time.deltaTime));
         }

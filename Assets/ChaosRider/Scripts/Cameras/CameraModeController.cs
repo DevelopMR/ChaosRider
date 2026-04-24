@@ -16,6 +16,7 @@ namespace ChaosRider.Cameras
         [SerializeField] private Transform animalRoot;
         [SerializeField] private Rigidbody animalBody;
         [SerializeField] private AnimalPhysicsController animalController;
+        [SerializeField] private GaitEngine gaitEngine;
         [SerializeField] private Transform mountedAnchor;
         [SerializeField] private Transform chaseLookTarget;
         [SerializeField] private Renderer[] hiddenInMountedView;
@@ -31,6 +32,8 @@ namespace ChaosRider.Cameras
         [SerializeField] private float mountedSpeedFieldOfViewBoost = 5f;
         [SerializeField] private float mountedBobAmount = 0.08f;
         [SerializeField] private float mountedBobSpeed = 7f;
+        [SerializeField] private float mountedGaitPitch = 1.4f;
+        [SerializeField] private float mountedGaitRoll = 1.2f;
 
         [Header("Chase Cam")]
         [SerializeField] private Vector3 chaseOffset = new Vector3(0f, 3.25f, -6.5f);
@@ -52,6 +55,7 @@ namespace ChaosRider.Cameras
             animalRoot = targetRoot;
             animalBody = targetBody;
             animalController = targetController;
+            gaitEngine = targetRoot != null ? targetRoot.GetComponent<GaitEngine>() : null;
             mountedAnchor = mountedViewAnchor;
             chaseLookTarget = chaseViewTarget;
             hiddenInMountedView = hideInMountedView;
@@ -63,6 +67,7 @@ namespace ChaosRider.Cameras
             chaseLookTarget = lookTarget;
             animalBody = targetRoot != null ? targetRoot.GetComponent<Rigidbody>() : null;
             animalController = null;
+            gaitEngine = null;
             currentMode = CameraMode.Chase;
             lastAppliedMode = (CameraMode)(-1);
         }
@@ -100,13 +105,26 @@ namespace ChaosRider.Cameras
         private void UpdateMountedCamera()
         {
             var anchor = mountedAnchor != null ? mountedAnchor : animalRoot;
-            var bob = Vector3.up * (Mathf.Sin(bobTime) * mountedBobAmount * Mathf.Clamp01(animalController != null ? Mathf.Abs(animalController.ForwardSpeed) / 8f : 0f));
+            var normalizedSpeed = animalController != null ? Mathf.Clamp01(Mathf.Abs(animalController.ForwardSpeed) / 8f) : 0f;
+            var bobSignal = Mathf.Sin(bobTime);
+            var gaitPitch = 0f;
+            var gaitRoll = 0f;
+
+            if (gaitEngine != null && gaitEngine.CurrentGait == GaitType.DogTrot)
+            {
+                var gaitCycle = gaitEngine.GaitPhase * Mathf.PI * 2f;
+                bobSignal = Mathf.Abs(Mathf.Sin(gaitCycle)) - 0.5f;
+                gaitPitch = Mathf.Sin(gaitCycle - Mathf.PI * 0.25f) * mountedGaitPitch * normalizedSpeed;
+                gaitRoll = -Mathf.Sin(gaitCycle) * mountedGaitRoll * normalizedSpeed;
+            }
+
+            var bob = Vector3.up * (bobSignal * mountedBobAmount * normalizedSpeed);
             var desiredPosition = anchor.TransformPoint(mountedOffset) + bob;
             transform.position = DampPosition(transform.position, desiredPosition, mountedPositionSharpness);
 
             var localAngularVelocity = animalRoot.InverseTransformDirection(animalBody.angularVelocity);
-            var pitch = -localAngularVelocity.x * mountedPitchInfluence;
-            var roll = -localAngularVelocity.z * mountedRollInfluence;
+            var pitch = -localAngularVelocity.x * mountedPitchInfluence + gaitPitch;
+            var roll = -localAngularVelocity.z * mountedRollInfluence + gaitRoll;
             var yaw = localAngularVelocity.y * mountedYawLookAhead;
             bobTime += Time.deltaTime * mountedBobSpeed * Mathf.Clamp01(animalController != null ? Mathf.Abs(animalController.ForwardSpeed) / 6f : 0f);
 
