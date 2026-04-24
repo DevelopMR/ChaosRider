@@ -93,6 +93,8 @@ namespace ChaosRider.Game
             body.centerOfMass = new Vector3(0f, -0.2f, 0.05f);
             body.maxAngularVelocity = 18f;
 
+            bull.AddComponent<AnimalLocomotionController>();
+            bull.AddComponent<GaitEngine>();
             var animalController = bull.AddComponent<AnimalPhysicsController>();
             CreateCameraAnchors(bull.transform);
 

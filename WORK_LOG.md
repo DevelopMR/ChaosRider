@@ -26,6 +26,8 @@
 - Reduced high-speed turning a further step: even less yaw authority, smaller lead angle, and the steering pivot pushed nearer the horns so the front of the bull guides the arc more decisively.
 - Rebalanced turn feel toward the front shoulders: cut center-body yaw influence again and pushed the effective steering pivot farther forward so the green-line front-shoulder pivot should dominate over the red-line body-center feel.
 - Reworked steering pivot model: replaced the single forward offset test with paired front and rear steering forces so the front shoulders actively define the arc instead of a center-body yaw torque dominating the feel.
+- Began the gait-engine pivot in code: added `AnimalMood`, `AnimalProfile`, `GaitProfile`, `AnimalLocomotionController`, and a first torso-only `GaitEngine`.
+- Wired the first `DogTrot` reference gait into the existing torso body so rider, camera, stability, and ragdoll can now be evaluated against gait-driven motion instead of springy buck oscillation.
 - Architectural pivot approved: we are moving from rigidbody-only buck/steer tuning toward a torso-first gait engine, with the rider treated as cargo on the animal body.
 - Added documentation for the new locomotion direction, including future `AnimalMood`, `AnimalProfile`, `GaitProfile`, and torso-only gait timing driven by virtual contact forces.
 

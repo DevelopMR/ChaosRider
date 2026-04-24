@@ -10,6 +10,7 @@ namespace ChaosRider.Animals
 
         [Header("Config")]
         [SerializeField] private AnimalDefinition definition;
+        [SerializeField] private bool useGaitEngine = true;
 
         [Header("Fallback Tuning")]
         [SerializeField] private float mass = 650f;
@@ -47,6 +48,8 @@ namespace ChaosRider.Animals
         [SerializeField] private bool drawGroundRay = true;
 
         private Rigidbody body;
+        private GaitEngine gaitEngine;
+        private AnimalLocomotionController locomotionController;
         private float nextBuckTime;
 
         public float LastImpactForce { get; private set; }
@@ -60,22 +63,35 @@ namespace ChaosRider.Animals
         private void Awake()
         {
             body = GetComponent<Rigidbody>();
+            gaitEngine = GetComponent<GaitEngine>();
+            locomotionController = GetComponent<AnimalLocomotionController>();
             ApplyDefinition();
+            gaitEngine?.Configure(body);
             ScheduleNextBuck();
         }
 
         private void FixedUpdate()
         {
-            var throttle = ReadThrottle();
-            var steering = ReadSteering();
+            var throttle = locomotionController != null ? locomotionController.DesiredThrottle : ReadThrottle();
+            var steering = locomotionController != null ? locomotionController.DesiredSteering : ReadSteering();
 
             UpdateGrounding();
+            UpdateVelocityState();
 
-            ApplyDrive(throttle);
-            ApplySteering(steering);
-            ApplyChaos(throttle);
+            if (useGaitEngine && gaitEngine != null)
+            {
+                gaitEngine.Step(throttle, steering, IsGrounded);
+            }
+            else
+            {
+                ApplyDrive(throttle);
+                ApplySteering(steering);
+                ApplyChaos(throttle);
+            }
+
             ApplyStabilityForces();
             ClampForwardSpeed();
+            UpdateVelocityState();
         }
 
         private void Update()
@@ -130,9 +146,7 @@ namespace ChaosRider.Animals
 
         private void ApplyDrive(float throttle)
         {
-            var forwardVelocity = Vector3.Dot(body.linearVelocity, transform.forward);
-            NormalizedSpeed = Mathf.Clamp01(Mathf.Abs(forwardVelocity) / Mathf.Max(0.01f, maxForwardSpeed));
-
+            var forwardVelocity = ForwardSpeed;
             var force = cruiseForce;
 
             if (throttle > 0.15f)
@@ -230,6 +244,11 @@ namespace ChaosRider.Animals
         {
             var rayOrigin = transform.position + Vector3.up * 0.1f;
             IsGrounded = Physics.Raycast(rayOrigin, Vector3.down, groundCheckDistance, ~0, QueryTriggerInteraction.Ignore);
+        }
+
+        private void UpdateVelocityState()
+        {
+            NormalizedSpeed = Mathf.Clamp01(Mathf.Abs(ForwardSpeed) / Mathf.Max(0.01f, maxForwardSpeed));
         }
 
         private void ClampForwardSpeed()
