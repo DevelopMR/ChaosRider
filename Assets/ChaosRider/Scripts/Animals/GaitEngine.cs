@@ -70,6 +70,7 @@ namespace ChaosRider.Animals
 
             body.AddTorque(transform.forward * (-rollImbalance * gaitProfile.rollTorque), ForceMode.Acceleration);
             body.AddTorque(transform.right * (pitchImbalance * gaitProfile.pitchTorque), ForceMode.Acceleration);
+            ApplyTorsoCadence(speedIntent, throttleInput);
         }
 
         private void ApplyLeg(VirtualLeg leg, float phaseOffset, bool isFront, bool isLeft, float throttleInput, float steeringInput, float speedIntent, ref float foreAftLoad, ref float lateralLoad)
@@ -118,8 +119,8 @@ namespace ChaosRider.Animals
         private Vector3 GetContactPoint(bool isFront, bool isLeft)
         {
             var halfLength = animalProfile.torsoLength * 0.5f;
-            var frontZ = Mathf.Lerp(halfLength * 0.45f, halfLength * 0.75f, animalProfile.shoulderBias);
-            var rearZ = -halfLength * 0.65f;
+            var frontZ = Mathf.Lerp(halfLength * 0.4f, halfLength * 0.62f, animalProfile.shoulderBias);
+            var rearZ = -halfLength * 0.48f;
             var z = isFront ? frontZ : rearZ;
 
             var trackWidth = isFront ? animalProfile.frontTrackWidth : animalProfile.rearTrackWidth;
@@ -133,7 +134,19 @@ namespace ChaosRider.Animals
         {
             // A softer pulse reads more like weight transfer and less like a trampoline pop.
             var arch = Mathf.Sin(stanceT * Mathf.PI);
-            return Mathf.SmoothStep(0.15f, 1f, arch);
+            return Mathf.SmoothStep(0.25f, 0.92f, arch);
+        }
+
+        private void ApplyTorsoCadence(float speedIntent, float throttleInput)
+        {
+            var cadence = gaitPhase * Mathf.PI * 2f;
+            var diagonalBias = Mathf.Sin(cadence);
+            var foreAftBias = Mathf.Sin(cadence - Mathf.PI * 0.25f);
+            var gaitScale = speedIntent * Mathf.Clamp01(Mathf.Abs(throttleInput));
+
+            body.AddTorque(transform.forward * (-diagonalBias * gaitProfile.cadenceRollTorque * gaitScale), ForceMode.Acceleration);
+            body.AddTorque(transform.right * (foreAftBias * gaitProfile.cadencePitchTorque * gaitScale), ForceMode.Acceleration);
+            body.AddForce(transform.forward * (Mathf.Max(0f, foreAftBias) * gaitProfile.cadenceSurgeForce * gaitScale), ForceMode.Acceleration);
         }
 
         private void ApplyBodyTension(bool isGrounded, float speedIntent)

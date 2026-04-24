@@ -29,6 +29,7 @@
 - Began the gait-engine pivot in code: added `AnimalMood`, `AnimalProfile`, `GaitProfile`, `AnimalLocomotionController`, and a first torso-only `GaitEngine`.
 - Wired the first `DogTrot` reference gait into the existing torso body so rider, camera, stability, and ragdoll can now be evaluated against gait-driven motion instead of springy buck oscillation.
 - Softened the first `DogTrot` pass with simple body tension: reduced support/steer spikes and added upright, lateral, and vertical damping so the torso settles like a standing animal instead of oscillating like a haunted crate.
+- Tuned the first gait again toward torso rhythm: narrowed the virtual contact spread, lengthened stance, softened direct corner forces, and added a light diagonal cadence layer so the body can roll and surge more like an animal torso and less like a giant shoe.
 - Architectural pivot approved: we are moving from rigidbody-only buck/steer tuning toward a torso-first gait engine, with the rider treated as cargo on the animal body.
 - Added documentation for the new locomotion direction, including future `AnimalMood`, `AnimalProfile`, `GaitProfile`, and torso-only gait timing driven by virtual contact forces.
 

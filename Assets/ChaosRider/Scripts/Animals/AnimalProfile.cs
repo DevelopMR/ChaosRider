@@ -16,9 +16,9 @@ namespace ChaosRider.Animals
         public float contactDepth = 0.15f;
 
         [Header("Locomotion Bias")]
-        [Range(0f, 1f)] public float shoulderBias = 0.72f;
+        [Range(0f, 1f)] public float shoulderBias = 0.62f;
         [Range(0f, 1f)] public float hindDriveBias = 0.7f;
-        public float frontTrackWidth = 0.6f;
-        public float rearTrackWidth = 0.52f;
+        public float frontTrackWidth = 0.48f;
+        public float rearTrackWidth = 0.42f;
     }
 }
