@@ -38,8 +38,14 @@ namespace ChaosRider.Rider
         [SerializeField] private float impactDrainMultiplier = 0.0035f;
         [SerializeField] private float instantEjectImpactForce = 9000f;
         [SerializeField] private float lowStabilityEjectDelay = 0.45f;
+        [SerializeField] private float instabilityEventBuild = 0.12f;
+        [SerializeField] private float instabilityEventDecay = 1.6f;
+        [SerializeField] private float instabilityEventThreshold = 0.3f;
         [SerializeField] private float ejectionImpulseMultiplier = 0.22f;
-        [SerializeField] private float upwardEjectionImpulse = 7f;
+        [SerializeField] private float upwardEjectionImpulse = 3.5f;
+        [SerializeField] private float maxForwardEjectionSpeed = 2.4f;
+        [SerializeField] private float maxUpwardEjectionSpeed = 4.5f;
+        [SerializeField] private float maxTotalEjectionSpeed = 10f;
         [SerializeField] private Key holdOnKey = Key.Space;
         [SerializeField] private Key debugEjectKey = Key.E;
 
@@ -52,6 +58,7 @@ namespace ChaosRider.Rider
         private float stability;
         private float previousForwardSpeed;
         private float lowStabilityTimer;
+        private float instabilityEventLevel;
 
         public void Configure(AnimalPhysicsController controller, Rigidbody body, Transform mountAnchor, RiderRagdollSystem riderRagdollSystem, Transform riderVisualRoot, CameraModeController riderCameraController)
         {
@@ -75,12 +82,14 @@ namespace ChaosRider.Rider
 
             previousForwardSpeed = animalController != null ? animalController.ForwardSpeed : 0f;
             lowStabilityTimer = 0f;
+            instabilityEventLevel = 0f;
         }
 
         private void Awake()
         {
             stability = maxStability;
             previousForwardSpeed = animalController != null ? animalController.ForwardSpeed : 0f;
+            instabilityEventLevel = 0f;
         }
 
         private void OnDestroy()
@@ -154,17 +163,19 @@ namespace ChaosRider.Rider
             var slipStress = lateralSlip * slipDrain * Time.deltaTime;
             var recovery = (holdOn ? holdOnRecoveryPerSecond : recoveryPerSecond) * Time.deltaTime;
             var slowAndCenteredBonus = Mathf.Clamp01(1f - Mathf.Abs(forwardSpeed) / 6f) * Mathf.Clamp01(1f - lateralSlip / 2f) * 6f * Time.deltaTime;
+            var instabilitySample = rollPitchStress * 0.05f + decelerationSpike * 0.015f + lateralSlip * 0.25f;
 
             stability -= balanceStress + surgeStress + slipStress;
             stability += recovery + slowAndCenteredBonus;
             stability = Mathf.Clamp(stability, 0f, maxStability);
             previousForwardSpeed = forwardSpeed;
+            instabilityEventLevel = Mathf.Clamp01(instabilityEventLevel - instabilityEventDecay * Time.deltaTime + instabilitySample * instabilityEventBuild * Time.deltaTime);
 
             if (stability <= maxStability * 0.08f)
             {
                 lowStabilityTimer += Time.deltaTime;
 
-                if (lowStabilityTimer >= lowStabilityEjectDelay)
+                if (lowStabilityTimer >= lowStabilityEjectDelay && instabilityEventLevel >= instabilityEventThreshold)
                 {
                     Eject("Lost stability");
                 }
@@ -183,6 +194,7 @@ namespace ChaosRider.Rider
             }
 
             stability = Mathf.Max(0f, stability - impactForce * impactDrainMultiplier);
+            instabilityEventLevel = Mathf.Clamp01(instabilityEventLevel + impactForce * 0.00004f);
 
             if (impactForce >= instantEjectImpactForce)
             {
@@ -204,7 +216,15 @@ namespace ChaosRider.Rider
                 mountedRiderRoot.gameObject.SetActive(false);
             }
 
-            var throwVelocity = animalBody.linearVelocity + transform.forward * (Mathf.Abs(animalController.ForwardSpeed) * ejectionImpulseMultiplier) + Vector3.up * upwardEjectionImpulse;
+            var planarVelocity = Vector3.ProjectOnPlane(animalBody.linearVelocity, Vector3.up);
+            var forwardLaunch = transform.forward * Mathf.Min(Mathf.Abs(animalController.ForwardSpeed) * ejectionImpulseMultiplier, maxForwardEjectionSpeed);
+            var upwardLaunch = Vector3.up * Mathf.Min(upwardEjectionImpulse + Mathf.Max(0f, animalBody.linearVelocity.y * 0.35f), maxUpwardEjectionSpeed);
+            var throwVelocity = planarVelocity + forwardLaunch + upwardLaunch;
+            if (throwVelocity.magnitude > maxTotalEjectionSpeed)
+            {
+                throwVelocity = throwVelocity.normalized * maxTotalEjectionSpeed;
+            }
+
             if (ragdollSystem != null)
             {
                 ragdollSystem.Eject(seatAnchor != null ? seatAnchor.position : transform.position + Vector3.up, seatAnchor != null ? seatAnchor.rotation : transform.rotation, throwVelocity, reason);
