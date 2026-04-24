@@ -62,7 +62,7 @@ The rigidbody-only tuning path produces springy motion that does not read as mam
 
 ### Rider-As-Cargo Rule
 
-The rider is cargo with opinions.
+The rider is cargo with opinions. (I can't believe you put that in here! LOL)
 
 Reason:
 This captures the actual gameplay fantasy: the player influences the animal, but the animal body owns the motion.

@@ -30,7 +30,7 @@ This repo is being developed in small vertical slices. Each slice should be play
 ## New Locomotion Direction
 
 The animal is the true gameplay body.
-The rider is cargo with opinions.
+The rider is cargo with opinions. (heheh)
 
 That means:
 
