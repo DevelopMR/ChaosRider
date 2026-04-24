@@ -22,10 +22,12 @@ namespace ChaosRider.Animals
         [SerializeField] private float reverseForce = 900f;
         [SerializeField] private float turnTorque = 320f;
         [SerializeField] private float steeringAssist = 0.2f;
-        [SerializeField] private float highSpeedTurnTorqueMultiplier = 0.18f;
-        [SerializeField] private float turnArcForce = 24f;
-        [SerializeField] private float headingAlignmentTorque = 8f;
+        [SerializeField] private float highSpeedTurnTorqueMultiplier = 0.08f;
+        [SerializeField] private float turnArcForce = 18f;
+        [SerializeField] private float headingAlignmentTorque = 6f;
         [SerializeField] private float maxSteerLeadAngle = 28f;
+        [SerializeField] private float highSpeedLeadAngleMultiplier = 0.28f;
+        [SerializeField] private Vector3 steeringPivotLocalOffset = new Vector3(0f, -0.15f, 0.65f);
         [SerializeField] private float buckImpulse = 8f;
         [SerializeField] private float buckTorque = 18f;
         [SerializeField] private float lateralKick = 4f;
@@ -149,7 +151,7 @@ namespace ChaosRider.Animals
         private void ApplySteering(float steering)
         {
             var steeringMultiplier = IsGrounded ? 1f : airControlMultiplier;
-            var steerScale = Mathf.Lerp(1.15f, highSpeedTurnTorqueMultiplier, NormalizedSpeed);
+            var steerScale = Mathf.Lerp(1.05f, highSpeedTurnTorqueMultiplier, NormalizedSpeed);
             var torque = turnTorque * steering * steerScale * steeringMultiplier * Time.fixedDeltaTime;
             body.AddTorque(Vector3.up * torque, ForceMode.VelocityChange);
 
@@ -161,20 +163,21 @@ namespace ChaosRider.Animals
                 var sidewaysVelocity = Vector3.Dot(body.linearVelocity, transform.right);
                 body.AddForce(-transform.right * sidewaysVelocity * steeringAssist * steeringMultiplier, ForceMode.Acceleration);
 
-                var steerAngle = steering * maxSteerLeadAngle * Mathf.Lerp(0.85f, 0.45f, NormalizedSpeed);
+                var steerAngle = steering * maxSteerLeadAngle * Mathf.Lerp(0.75f, highSpeedLeadAngleMultiplier, NormalizedSpeed);
                 var desiredDirection = Quaternion.AngleAxis(steerAngle, Vector3.up) * transform.forward;
                 desiredDirection = Vector3.ProjectOnPlane(desiredDirection, Vector3.up).normalized;
 
                 var desiredVelocity = desiredDirection * planarSpeed;
                 var velocityCorrection = Vector3.ProjectOnPlane(desiredVelocity - planarVelocity, Vector3.up);
-                body.AddForce(velocityCorrection * turnArcForce * steeringMultiplier, ForceMode.Acceleration);
+                var steeringPivotWorld = transform.TransformPoint(steeringPivotLocalOffset);
+                body.AddForceAtPosition(velocityCorrection * turnArcForce * steeringMultiplier, steeringPivotWorld, ForceMode.Acceleration);
 
                 var signedAngle = Vector3.SignedAngle(
                     Vector3.ProjectOnPlane(transform.forward, Vector3.up),
                     desiredDirection,
                     Vector3.up);
 
-                var alignmentTorque = signedAngle * headingAlignmentTorque * Mathf.Lerp(0.25f, 1f, NormalizedSpeed) * Time.fixedDeltaTime;
+                var alignmentTorque = signedAngle * headingAlignmentTorque * Mathf.Lerp(0.18f, 0.8f, NormalizedSpeed) * Time.fixedDeltaTime;
                 body.AddTorque(Vector3.up * alignmentTorque, ForceMode.VelocityChange);
             }
         }
