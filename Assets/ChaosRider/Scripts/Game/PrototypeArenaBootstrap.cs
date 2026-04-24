@@ -263,14 +263,10 @@ namespace ChaosRider.Game
             }
             var riderSeatAnchor = target.Find("RiderSeatAnchor");
             var chaseTarget = target.Find("ChaseLookTarget");
-            var bullVisual = target.Find("Bull_Visual");
             var riderVisual = target.Find("MountedRider");
             var hiddenRenderers = new List<Renderer>();
 
-            if (bullVisual != null && bullVisual.TryGetComponent<Renderer>(out var bullRenderer))
-            {
-                hiddenRenderers.Add(bullRenderer);
-            }
+            hiddenRenderers.AddRange(target.GetComponentsInChildren<Renderer>(true));
 
             if (riderVisual != null)
             {
