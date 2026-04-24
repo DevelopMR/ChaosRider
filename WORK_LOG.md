@@ -25,6 +25,7 @@
 - Reduced high-speed turning again: weaker yaw authority, smaller high-speed lead angle, and a slightly more forward steering pivot so the bull commits harder to its momentum.
 - Reduced high-speed turning a further step: even less yaw authority, smaller lead angle, and the steering pivot pushed nearer the horns so the front of the bull guides the arc more decisively.
 - Rebalanced turn feel toward the front shoulders: cut center-body yaw influence again and pushed the effective steering pivot farther forward so the green-line front-shoulder pivot should dominate over the red-line body-center feel.
+- Reworked steering pivot model: replaced the single forward offset test with paired front and rear steering forces so the front shoulders actively define the arc instead of a center-body yaw torque dominating the feel.
 
 ## Logging Rules
 
