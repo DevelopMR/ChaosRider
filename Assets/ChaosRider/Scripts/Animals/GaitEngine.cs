@@ -140,9 +140,9 @@ namespace ChaosRider.Animals
 
         private float EvaluateLoadPulse(float stanceT)
         {
-            // A softer pulse reads more like weight transfer and less like a trampoline pop.
+            // A trot should feel like distinct steps with a quick lift, not a smeared surge.
             var arch = Mathf.Sin(stanceT * Mathf.PI);
-            return Mathf.SmoothStep(0.25f, 0.92f, arch);
+            return Mathf.SmoothStep(0.18f, 1f, arch);
         }
 
         private void ApplyTorsoCadence(float speedIntent, float throttleInput)
@@ -189,8 +189,8 @@ namespace ChaosRider.Animals
                 return;
             }
 
-            var yawDamping = -body.angularVelocity.y * 0.35f;
-            body.AddTorque(Vector3.up * (steeringInput * gaitProfile.idleTurnTorque + yawDamping), ForceMode.Acceleration);
+            var yawDamping = -body.angularVelocity.y * 0.9f;
+            body.AddTorque(Vector3.up * (steeringInput * gaitProfile.idleTurnTorque + yawDamping), ForceMode.VelocityChange);
         }
 
         private void ApplyIdleSettling()
