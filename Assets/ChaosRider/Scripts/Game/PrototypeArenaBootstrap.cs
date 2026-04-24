@@ -119,7 +119,7 @@ namespace ChaosRider.Game
             mountSystem.Configure(
                 animalController,
                 body,
-                bull.transform.Find("MountedCameraAnchor"),
+                bull.transform.Find("RiderSeatAnchor"),
                 ragdollSystem,
                 mountedRider,
                 null);
@@ -129,10 +129,10 @@ namespace ChaosRider.Game
 
         private static void CreateCameraAnchors(Transform parent)
         {
-            var mountedAnchor = new GameObject("MountedCameraAnchor");
-            mountedAnchor.transform.SetParent(parent);
-            mountedAnchor.transform.localPosition = new Vector3(0f, 0.72f, -0.7f);
-            mountedAnchor.transform.localRotation = Quaternion.identity;
+            var riderSeatAnchor = new GameObject("RiderSeatAnchor");
+            riderSeatAnchor.transform.SetParent(parent);
+            riderSeatAnchor.transform.localPosition = new Vector3(0f, 0.72f, -0.7f);
+            riderSeatAnchor.transform.localRotation = Quaternion.identity;
 
             var chaseTarget = new GameObject("ChaseLookTarget");
             chaseTarget.transform.SetParent(parent);
@@ -256,11 +256,12 @@ namespace ChaosRider.Game
 
             var body = target.GetComponent<Rigidbody>();
             var animalController = target.GetComponent<AnimalPhysicsController>();
-            var mountedAnchor = target.Find("MountedRider/RiderHead/HeadCameraAnchor");
-            if (mountedAnchor == null)
+            var mountedCameraAnchor = target.Find("MountedRider/RiderHead/HeadCameraAnchor");
+            if (mountedCameraAnchor == null)
             {
-                mountedAnchor = target.Find("MountedCameraAnchor");
+                mountedCameraAnchor = target.Find("RiderSeatAnchor");
             }
+            var riderSeatAnchor = target.Find("RiderSeatAnchor");
             var chaseTarget = target.Find("ChaseLookTarget");
             var bullVisual = target.Find("Bull_Visual");
             var riderVisual = target.Find("MountedRider");
@@ -286,7 +287,7 @@ namespace ChaosRider.Game
                 target,
                 body,
                 animalController,
-                mountedAnchor,
+                mountedCameraAnchor,
                 chaseTarget,
                 hiddenRenderers.ToArray());
 
@@ -297,7 +298,7 @@ namespace ChaosRider.Game
                 mountSystem.Configure(
                     animalController,
                     body,
-                    mountedAnchor,
+                    riderSeatAnchor,
                     ragdollSystem,
                     riderVisual,
                     cameraController);

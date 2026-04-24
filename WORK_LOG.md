@@ -19,6 +19,7 @@
 - Implemented Slice 5: added a `RiderRagdollSystem` that builds a placeholder ragdoll at runtime, throws it using animal momentum, and moves the camera to chase the crash payoff.
 - Added another first-person boost: mounted view now hides overlapping placeholder body geometry and adds speed/bob tuning for a more readable ride feel.
 - Polished mounted view anchoring: first-person camera now prefers a dedicated anchor inside the rider head rather than a low seat point on the bull.
+- Fixed mounted-view launch bug: the rider seat anchor and the rider head camera anchor are now separate, preventing the mounted rig from recursively chasing its own head point.
 
 ## Logging Rules
 
