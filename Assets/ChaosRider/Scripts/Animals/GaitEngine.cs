@@ -44,6 +44,7 @@ namespace ChaosRider.Animals
             }
 
             var speedIntent = Mathf.Clamp01(Mathf.Abs(throttleInput));
+            ApplyBodyTension(isGrounded, speedIntent);
 
             if (!isGrounded || speedIntent < gaitProfile.idleThreshold)
             {
@@ -88,7 +89,7 @@ namespace ChaosRider.Animals
             }
 
             var stanceT = legPhase / gaitProfile.stanceFraction;
-            var loadPulse = Mathf.Sin(stanceT * Mathf.PI);
+            var loadPulse = EvaluateLoadPulse(stanceT);
             var supportBias = isFront ? gaitProfile.frontSupportBias : gaitProfile.rearSupportBias;
             var driveBias = isFront ? Mathf.Lerp(0.35f, 0.45f, 1f - animalProfile.hindDriveBias) : animalProfile.hindDriveBias;
 
@@ -126,6 +127,38 @@ namespace ChaosRider.Animals
             var y = -animalProfile.contactDepth;
 
             return transform.TransformPoint(new Vector3(x, y, z));
+        }
+
+        private float EvaluateLoadPulse(float stanceT)
+        {
+            // A softer pulse reads more like weight transfer and less like a trampoline pop.
+            var arch = Mathf.Sin(stanceT * Mathf.PI);
+            return Mathf.SmoothStep(0.15f, 1f, arch);
+        }
+
+        private void ApplyBodyTension(bool isGrounded, float speedIntent)
+        {
+            var localUp = transform.InverseTransformDirection(Vector3.up);
+            var uprightError = new Vector3(localUp.z, 0f, -localUp.x);
+            var localAngularVelocity = transform.InverseTransformDirection(body.angularVelocity);
+
+            var springScale = isGrounded ? 1f : 0.35f;
+            var dampingScale = Mathf.Lerp(1.15f, 0.8f, speedIntent);
+
+            var correctiveTorqueLocal = new Vector3(
+                uprightError.x * gaitProfile.uprightSpring - localAngularVelocity.x * gaitProfile.uprightDamping * dampingScale,
+                0f,
+                uprightError.z * gaitProfile.uprightSpring - localAngularVelocity.z * gaitProfile.uprightDamping * dampingScale);
+
+            body.AddRelativeTorque(correctiveTorqueLocal * springScale, ForceMode.Acceleration);
+
+            var localVelocity = transform.InverseTransformDirection(body.linearVelocity);
+            var dampingForceLocal = new Vector3(
+                -localVelocity.x * gaitProfile.lateralDamping,
+                -Mathf.Min(0f, localVelocity.y) * gaitProfile.verticalDamping,
+                0f);
+
+            body.AddRelativeForce(dampingForceLocal * springScale, ForceMode.Acceleration);
         }
 
         private void ApplyIdleSettling()

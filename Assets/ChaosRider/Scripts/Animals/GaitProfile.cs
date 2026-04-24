@@ -21,17 +21,23 @@ namespace ChaosRider.Animals
         public float rearRightPhaseOffset = 0f;
 
         [Header("Forces")]
-        public float supportForce = 42f;
-        public float driveForce = 28f;
+        public float supportForce = 34f;
+        public float driveForce = 20f;
         public float brakingForce = 18f;
-        public float frontSteerForce = 14f;
-        public float rearCounterSteerForce = 8f;
+        public float frontSteerForce = 9f;
+        public float rearCounterSteerForce = 5f;
 
         [Header("Body Reaction")]
         public float frontSupportBias = 1.08f;
         public float rearSupportBias = 0.92f;
-        public float rollTorque = 5f;
-        public float pitchTorque = 4f;
+        public float rollTorque = 3f;
+        public float pitchTorque = 2.5f;
         public float settleForce = 15f;
+
+        [Header("Body Tension")]
+        public float uprightSpring = 18f;
+        public float uprightDamping = 4.5f;
+        public float verticalDamping = 3.5f;
+        public float lateralDamping = 2.75f;
     }
 }
