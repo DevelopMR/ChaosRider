@@ -31,6 +31,7 @@
 - Softened the first `DogTrot` pass with simple body tension: reduced support/steer spikes and added upright, lateral, and vertical damping so the torso settles like a standing animal instead of oscillating like a haunted crate.
 - Tuned the first gait again toward torso rhythm: narrowed the virtual contact spread, lengthened stance, softened direct corner forces, and added a light diagonal cadence layer so the body can roll and surge more like an animal torso and less like a giant shoe.
 - Reworked mounted rider stability to react to bad balance, surge, and side slip instead of draining just from forward travel, and added a short low-stability grace window so ordinary gait cycles do not immediately ragdoll the rider.
+- Corrected the first gait back toward `DogTrot`: reduced the fore-aft surge that was reading as a gallop, restored turn authority from standstill, and added longitudinal damping so stopping the animal sheds leftover torso momentum more cleanly.
 - Architectural pivot approved: we are moving from rigidbody-only buck/steer tuning toward a torso-first gait engine, with the rider treated as cargo on the animal body.
 - Added documentation for the new locomotion direction, including future `AnimalMood`, `AnimalProfile`, `GaitProfile`, and torso-only gait timing driven by virtual contact forces.
 

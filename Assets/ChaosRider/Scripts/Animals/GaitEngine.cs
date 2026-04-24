@@ -44,10 +44,17 @@ namespace ChaosRider.Animals
             }
 
             var speedIntent = Mathf.Clamp01(Mathf.Abs(throttleInput));
-            ApplyBodyTension(isGrounded, speedIntent);
+            ApplyBodyTension(isGrounded, speedIntent, throttleInput);
 
-            if (!isGrounded || speedIntent < gaitProfile.idleThreshold)
+            if (!isGrounded)
             {
+                ApplyIdleSettling();
+                return;
+            }
+
+            if (speedIntent < gaitProfile.idleThreshold)
+            {
+                ApplyIdleTurning(steeringInput);
                 ApplyIdleSettling();
                 return;
             }
@@ -102,7 +109,8 @@ namespace ChaosRider.Animals
                 : gaitProfile.brakingForce * throttleInput * loadPulse * supportBias;
             body.AddForceAtPosition(transform.forward * driveForceMagnitude, contactPoint, ForceMode.Acceleration);
 
-            var steerStrength = steeringInput * loadPulse * speedIntent;
+            var steerScale = Mathf.Lerp(gaitProfile.lowSpeedSteerScale, 1f, speedIntent);
+            var steerStrength = steeringInput * loadPulse * steerScale;
             if (isFront)
             {
                 body.AddForceAtPosition(transform.right * gaitProfile.frontSteerForce * steerStrength, contactPoint, ForceMode.Acceleration);
@@ -149,7 +157,7 @@ namespace ChaosRider.Animals
             body.AddForce(transform.forward * (Mathf.Max(0f, foreAftBias) * gaitProfile.cadenceSurgeForce * gaitScale), ForceMode.Acceleration);
         }
 
-        private void ApplyBodyTension(bool isGrounded, float speedIntent)
+        private void ApplyBodyTension(bool isGrounded, float speedIntent, float throttleInput)
         {
             var localUp = transform.InverseTransformDirection(Vector3.up);
             var uprightError = new Vector3(localUp.z, 0f, -localUp.x);
@@ -169,9 +177,19 @@ namespace ChaosRider.Animals
             var dampingForceLocal = new Vector3(
                 -localVelocity.x * gaitProfile.lateralDamping,
                 -Mathf.Min(0f, localVelocity.y) * gaitProfile.verticalDamping,
-                0f);
+                -localVelocity.z * gaitProfile.longitudinalDamping * Mathf.Lerp(1.4f, 0.55f, Mathf.Clamp01(Mathf.Abs(throttleInput))));
 
             body.AddRelativeForce(dampingForceLocal * springScale, ForceMode.Acceleration);
+        }
+
+        private void ApplyIdleTurning(float steeringInput)
+        {
+            if (Mathf.Abs(steeringInput) < 0.01f)
+            {
+                return;
+            }
+
+            body.AddTorque(Vector3.up * (steeringInput * gaitProfile.idleTurnTorque * Time.fixedDeltaTime), ForceMode.VelocityChange);
         }
 
         private void ApplyIdleSettling()
