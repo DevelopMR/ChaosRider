@@ -22,6 +22,7 @@
 - Fixed mounted-view launch bug: the rider seat anchor and the rider head camera anchor are now separate, preventing the mounted rig from recursively chasing its own head point.
 - Tuned bull handling for mass: high-speed turning now fades into a momentum arc instead of spinning on the spot, and mounted view now hides the full placeholder bull geometry for cleaner first-person readability.
 - Further tuned bull turn mass: steering now pivots from a point pushed forward into the chest area and gives up even more high-speed spin so the animal carves instead of rotating like a light vehicle.
+- Reduced high-speed turning again: weaker yaw authority, smaller high-speed lead angle, and a slightly more forward steering pivot so the bull commits harder to its momentum.
 
 ## Logging Rules
 

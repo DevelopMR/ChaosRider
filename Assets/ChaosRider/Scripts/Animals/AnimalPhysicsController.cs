@@ -22,12 +22,12 @@ namespace ChaosRider.Animals
         [SerializeField] private float reverseForce = 900f;
         [SerializeField] private float turnTorque = 320f;
         [SerializeField] private float steeringAssist = 0.2f;
-        [SerializeField] private float highSpeedTurnTorqueMultiplier = 0.08f;
-        [SerializeField] private float turnArcForce = 18f;
-        [SerializeField] private float headingAlignmentTorque = 6f;
+        [SerializeField] private float highSpeedTurnTorqueMultiplier = 0.04f;
+        [SerializeField] private float turnArcForce = 16f;
+        [SerializeField] private float headingAlignmentTorque = 5f;
         [SerializeField] private float maxSteerLeadAngle = 28f;
-        [SerializeField] private float highSpeedLeadAngleMultiplier = 0.28f;
-        [SerializeField] private Vector3 steeringPivotLocalOffset = new Vector3(0f, -0.15f, 0.65f);
+        [SerializeField] private float highSpeedLeadAngleMultiplier = 0.18f;
+        [SerializeField] private Vector3 steeringPivotLocalOffset = new Vector3(0f, -0.15f, 0.8f);
         [SerializeField] private float buckImpulse = 8f;
         [SerializeField] private float buckTorque = 18f;
         [SerializeField] private float lateralKick = 4f;
@@ -151,7 +151,7 @@ namespace ChaosRider.Animals
         private void ApplySteering(float steering)
         {
             var steeringMultiplier = IsGrounded ? 1f : airControlMultiplier;
-            var steerScale = Mathf.Lerp(1.05f, highSpeedTurnTorqueMultiplier, NormalizedSpeed);
+            var steerScale = Mathf.Lerp(1.0f, highSpeedTurnTorqueMultiplier, NormalizedSpeed);
             var torque = turnTorque * steering * steerScale * steeringMultiplier * Time.fixedDeltaTime;
             body.AddTorque(Vector3.up * torque, ForceMode.VelocityChange);
 
@@ -177,7 +177,7 @@ namespace ChaosRider.Animals
                     desiredDirection,
                     Vector3.up);
 
-                var alignmentTorque = signedAngle * headingAlignmentTorque * Mathf.Lerp(0.18f, 0.8f, NormalizedSpeed) * Time.fixedDeltaTime;
+                var alignmentTorque = signedAngle * headingAlignmentTorque * Mathf.Lerp(0.12f, 0.65f, NormalizedSpeed) * Time.fixedDeltaTime;
                 body.AddTorque(Vector3.up * alignmentTorque, ForceMode.VelocityChange);
             }
         }
