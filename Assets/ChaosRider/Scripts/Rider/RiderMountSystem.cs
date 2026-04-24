@@ -24,12 +24,14 @@ namespace ChaosRider.Rider
 
         [Header("Stability")]
         [SerializeField] private float maxStability = 100f;
-        [SerializeField] private float recoveryPerSecond = 4f;
-        [SerializeField] private float holdOnRecoveryPerSecond = 18f;
-        [SerializeField] private float angularDrain = 2.4f;
-        [SerializeField] private float speedDrain = 3.5f;
+        [SerializeField] private float recoveryPerSecond = 7f;
+        [SerializeField] private float holdOnRecoveryPerSecond = 20f;
+        [SerializeField] private float balanceDrain = 1.4f;
+        [SerializeField] private float surgeDrain = 0.45f;
+        [SerializeField] private float slipDrain = 0.8f;
         [SerializeField] private float impactDrainMultiplier = 0.0035f;
         [SerializeField] private float instantEjectImpactForce = 9000f;
+        [SerializeField] private float lowStabilityEjectDelay = 0.45f;
         [SerializeField] private float ejectionImpulseMultiplier = 0.55f;
         [SerializeField] private float upwardEjectionImpulse = 7f;
         [SerializeField] private Key holdOnKey = Key.Space;
@@ -42,6 +44,8 @@ namespace ChaosRider.Rider
         public bool IsMounted { get; private set; } = true;
 
         private float stability;
+        private float previousForwardSpeed;
+        private float lowStabilityTimer;
 
         public void Configure(AnimalPhysicsController controller, Rigidbody body, Transform mountAnchor, RiderRagdollSystem riderRagdollSystem, Transform riderVisualRoot, CameraModeController riderCameraController)
         {
@@ -61,11 +65,15 @@ namespace ChaosRider.Rider
             {
                 animalController.Impacted += HandleImpact;
             }
+
+            previousForwardSpeed = animalController != null ? animalController.ForwardSpeed : 0f;
+            lowStabilityTimer = 0f;
         }
 
         private void Awake()
         {
             stability = maxStability;
+            previousForwardSpeed = animalController != null ? animalController.ForwardSpeed : 0f;
         }
 
         private void OnDestroy()
@@ -111,17 +119,35 @@ namespace ChaosRider.Rider
         private void UpdateStability()
         {
             var holdOn = Keyboard.current != null && Keyboard.current[holdOnKey].isPressed;
-            var angularStress = animalBody.angularVelocity.magnitude * angularDrain * Time.deltaTime;
-            var speedStress = Mathf.Abs(animalController.ForwardSpeed) * speedDrain * 0.05f * Time.deltaTime;
+            var localAngularVelocity = transform.InverseTransformDirection(animalBody.angularVelocity);
+            var rollPitchStress = new Vector2(localAngularVelocity.x, localAngularVelocity.z).magnitude;
+            var forwardSpeed = animalController.ForwardSpeed;
+            var forwardAcceleration = Mathf.Abs(forwardSpeed - previousForwardSpeed) / Mathf.Max(Time.deltaTime, 0.0001f);
+            var lateralSlip = Mathf.Abs(Vector3.Dot(animalBody.linearVelocity, transform.right));
+
+            var balanceStress = rollPitchStress * balanceDrain * Time.deltaTime;
+            var surgeStress = forwardAcceleration * surgeDrain * 0.1f * Time.deltaTime;
+            var slipStress = lateralSlip * slipDrain * Time.deltaTime;
             var recovery = (holdOn ? holdOnRecoveryPerSecond : recoveryPerSecond) * Time.deltaTime;
+            var slowAndCenteredBonus = Mathf.Clamp01(1f - Mathf.Abs(forwardSpeed) / 6f) * Mathf.Clamp01(1f - lateralSlip / 2f) * 6f * Time.deltaTime;
 
-            stability -= angularStress + speedStress;
-            stability += recovery;
+            stability -= balanceStress + surgeStress + slipStress;
+            stability += recovery + slowAndCenteredBonus;
             stability = Mathf.Clamp(stability, 0f, maxStability);
+            previousForwardSpeed = forwardSpeed;
 
-            if (stability <= 0.01f)
+            if (stability <= maxStability * 0.08f)
             {
-                Eject("Lost stability");
+                lowStabilityTimer += Time.deltaTime;
+
+                if (lowStabilityTimer >= lowStabilityEjectDelay)
+                {
+                    Eject("Lost stability");
+                }
+            }
+            else
+            {
+                lowStabilityTimer = 0f;
             }
         }
 
