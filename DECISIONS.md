@@ -52,3 +52,24 @@ When the rider ejects, the camera should move to chase-style follow on the ragdo
 
 Reason:
 The crash is the payoff, so the camera needs to preserve readability at the moment of failure.
+
+### Torso-First Locomotion Pivot
+
+The animal torso is now treated as the true locomotion root body, and locomotion will be driven by gait timing rather than generic oscillation.
+
+Reason:
+The rigidbody-only tuning path produces springy motion that does not read as mammalian.
+
+### Rider-As-Cargo Rule
+
+The rider is cargo with opinions.
+
+Reason:
+This captures the actual gameplay fantasy: the player influences the animal, but the animal body owns the motion.
+
+### Mood Stub
+
+`AnimalMood` will be part of the architecture now, but animals remain obedient in the first implementation.
+
+Reason:
+Mood is a strong future design axis, but should not block the first gait engine pass.

@@ -6,7 +6,7 @@ Replay is removed completely.
 
 The prototype now stands on these primary pillars:
 
-1. Animal-driven destruction must feel heavy, readable, and funny.
+1. Animal torso locomotion must feel recognizable, heavy, and readable.
 2. Rider ejection and ragdoll fallout must be a core source of comedy.
 3. Camera options must help the player read chaos in real time instead of relying on replay.
 4. We ship in small playable slices and test every slice before expanding scope.
@@ -19,6 +19,7 @@ The prototype now stands on these primary pillars:
 - advanced animal animation fidelity
 - multiple polished arenas
 - final art pipeline
+- full skeletal leg rigs for the prototype
 
 ## Camera Strategy
 
@@ -51,13 +52,14 @@ GitHub sync happens after the slice is stable locally.
 ## Milestone 1
 
 Goal:
-Prove a funny graybox loop with one animal, one arena, destruction, ejection, ragdoll, and camera switching.
+Prove a funny graybox loop with one animal torso, one arena, gait-driven locomotion, ejection, ragdoll, and camera switching.
 
 Definition of done:
 
 - player can press Play and immediately control a bull-like animal
+- player influence should feel like directing an animal, not driving a toy vehicle
 - two camera modes are switchable during play
-- animal movement feels unstable rather than car-like
+- animal movement feels like a torso carrying a familiar gait rhythm
 - several props react differently to impact severity
 - rider can be ejected by instability or hard collisions
 - ragdoll outcome is readable and satisfying
@@ -166,6 +168,20 @@ Test:
 - different impacts produce different object outcomes
 - bull can meaningfully alter the arena
 
+### Slice 6A: Locomotion Pivot
+
+Deliverables:
+
+- `AnimalMood` stub
+- `AnimalProfile` and `GaitProfile` data structures
+- `GaitEngine` prototype using four virtual contact points
+- first torso-only reference gait using dog timing data
+
+Test:
+
+- locomotion feels impulse-driven rather than oscillatory
+- rider motion reads as being carried by a living torso
+
 ### Slice 7: Damage And Injury Summary
 
 Deliverables:
@@ -209,6 +225,15 @@ Treat these as distinct states instead of over-unifying too early:
 - destructible prop intact state
 - destructible prop broken state
 
+### Torso First
+
+For locomotion, the animal torso is the physical root object.
+
+- the rider does not drive themselves
+- the rider influences the animal
+- the animal decides the body motion
+- the rider experiences the result
+
 ### Optimize For Tuning Speed
 
 If a system is hard to tune in the Inspector, it is too expensive for this phase.
@@ -217,6 +242,11 @@ If a system is hard to tune in the Inspector, it is too expensive for this phase
 
 - `GameManager`
 - `AnimalDefinition`
+- `AnimalProfile`
+- `AnimalMood`
+- `GaitProfile`
+- `GaitEngine`
+- `AnimalLocomotionController`
 - `AnimalPhysicsController`
 - `RiderMountSystem`
 - `RiderRagdollSystem`
@@ -228,10 +258,11 @@ If a system is hard to tune in the Inspector, it is too expensive for this phase
 
 ## Immediate Next Step
 
-Start Slice 6 and Slice 7 together:
+Start the locomotion pivot first:
 
-- add destructible fence, barrel, and wall props
-- track property damage, injury severity, and run-end summary
-- tune collisions so destruction and ejection feel connected
+- stub `AnimalMood`
+- define `AnimalProfile` and `GaitProfile`
+- prototype a torso-only `GaitEngine`
+- prove one recognizable reference gait before returning to destruction and summary
 
-This is the fastest route from a movement prototype to the full comedy loop.
+This is the fastest route from springy motion to believable animal motion.
