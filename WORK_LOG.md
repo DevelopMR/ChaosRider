@@ -24,6 +24,7 @@
 - Further tuned bull turn mass: steering now pivots from a point pushed forward into the chest area and gives up even more high-speed spin so the animal carves instead of rotating like a light vehicle.
 - Reduced high-speed turning again: weaker yaw authority, smaller high-speed lead angle, and a slightly more forward steering pivot so the bull commits harder to its momentum.
 - Reduced high-speed turning a further step: even less yaw authority, smaller lead angle, and the steering pivot pushed nearer the horns so the front of the bull guides the arc more decisively.
+- Rebalanced turn feel toward the front shoulders: cut center-body yaw influence again and pushed the effective steering pivot farther forward so the green-line front-shoulder pivot should dominate over the red-line body-center feel.
 
 ## Logging Rules
 
