@@ -43,6 +43,8 @@ namespace ChaosRider.Animals
         [Header("Profiles")]
         [SerializeField] private AnimalProfile animalProfile = new AnimalProfile();
         [SerializeField] private GaitProfile gaitProfile = new GaitProfile();
+        [SerializeField] private bool useManualGaitSelection = true;
+        [SerializeField] private GaitType selectedGait = GaitType.Idle;
 
         [Header("Debug")]
         [SerializeField] private bool drawContactPoints = true;
@@ -54,6 +56,7 @@ namespace ChaosRider.Animals
 
         public float GaitPhase => gaitPhase;
         public GaitType CurrentGait => currentGait;
+        public GaitType SelectedGait => selectedGait;
         public string CurrentGaitLabel => currentGait.ToString().Replace("Dog", string.Empty);
         public float RideVerticalSignal { get; private set; }
         public float RideForeAftSignal { get; private set; }
@@ -64,6 +67,12 @@ namespace ChaosRider.Animals
         public void Configure(Rigidbody targetBody)
         {
             body = targetBody;
+        }
+
+        public void SetSelectedGait(GaitType gaitType)
+        {
+            selectedGait = gaitType;
+            currentGait = gaitType;
         }
 
         private void Awake()
@@ -85,7 +94,9 @@ namespace ChaosRider.Animals
                 planarSpeed,
                 Mathf.Lerp(6f, 14f, speedIntent) * Time.fixedDeltaTime);
 
-            currentGait = SelectGait(speedIntent, planarSpeed, gaitSelectionVelocity);
+            currentGait = useManualGaitSelection
+                ? selectedGait
+                : SelectGait(speedIntent, planarSpeed, gaitSelectionVelocity);
             ApplyBodyTension(isGrounded, speedIntent, throttleInput);
 
             if (!isGrounded)

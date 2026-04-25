@@ -6,17 +6,25 @@ namespace ChaosRider.Animals
     public class GaitDebugOverlay : MonoBehaviour
     {
         [SerializeField] private bool showOverlay = true;
-        [SerializeField] private int fontSize = 48;
-        [SerializeField] private Vector2 screenPosition = new Vector2(24f, 20f);
+        [SerializeField] private int fontSize = 28;
+        [SerializeField] private float topPadding = 18f;
+        [SerializeField] private float horizontalGap = 26f;
 
         private GaitEngine gaitEngine;
-        private Rigidbody body;
-        private GUIStyle labelStyle;
+        private GUIStyle activeStyle;
+        private GUIStyle inactiveStyle;
+        private readonly GaitType[] gaitOrder =
+        {
+            GaitType.Idle,
+            GaitType.DogWalk,
+            GaitType.DogTrot,
+            GaitType.DogCanter,
+            GaitType.DogGallop,
+        };
 
         private void Awake()
         {
             gaitEngine = GetComponent<GaitEngine>();
-            body = GetComponent<Rigidbody>();
         }
 
         private void OnGUI()
@@ -26,26 +34,67 @@ namespace ChaosRider.Animals
                 return;
             }
 
-            if (labelStyle == null)
+            EnsureStyles();
+
+            var labels = new string[gaitOrder.Length];
+            var totalWidth = 0f;
+            for (var index = 0; index < gaitOrder.Length; index++)
             {
-                labelStyle = new GUIStyle(GUI.skin.label)
-                {
-                    fontSize = fontSize,
-                    fontStyle = FontStyle.Bold,
-                    alignment = TextAnchor.UpperLeft,
-                };
-                labelStyle.normal.textColor = Color.white;
+                labels[index] = FormatLabel(gaitOrder[index]);
+                totalWidth += activeStyle.CalcSize(new GUIContent(labels[index])).x;
             }
 
-            GUI.Label(
-                new Rect(screenPosition.x, screenPosition.y, 500f, 80f),
-                gaitEngine.CurrentGaitLabel.ToUpperInvariant(),
-                labelStyle);
+            totalWidth += horizontalGap * Mathf.Max(0, gaitOrder.Length - 1);
+            var startX = Mathf.Max(20f, (Screen.width - totalWidth) * 0.5f);
+            var y = topPadding;
 
-            GUI.Label(
-                new Rect(screenPosition.x, screenPosition.y + 52f, 500f, 40f),
-                $"Speed {(body != null ? body.linearVelocity.magnitude : 0f):0.00}",
-                labelStyle);
+            for (var index = 0; index < gaitOrder.Length; index++)
+            {
+                var gaitType = gaitOrder[index];
+                var label = labels[index];
+                var style = gaitEngine.SelectedGait == gaitType ? activeStyle : inactiveStyle;
+                var size = style.CalcSize(new GUIContent(label));
+                var rect = new Rect(startX, y, size.x, size.y + 8f);
+
+                if (GUI.Button(rect, GUIContent.none, GUIStyle.none))
+                {
+                    gaitEngine.SetSelectedGait(gaitType);
+                }
+
+                GUI.Label(rect, label, style);
+                startX += size.x + horizontalGap;
+            }
+        }
+
+        private void EnsureStyles()
+        {
+            if (activeStyle != null && inactiveStyle != null)
+            {
+                return;
+            }
+
+            activeStyle = new GUIStyle(GUI.skin.label)
+            {
+                fontSize = fontSize,
+                fontStyle = FontStyle.Bold,
+                alignment = TextAnchor.UpperLeft,
+            };
+            activeStyle.normal.textColor = Color.white;
+
+            inactiveStyle = new GUIStyle(activeStyle);
+            inactiveStyle.normal.textColor = new Color(0.68f, 0.68f, 0.68f, 1f);
+        }
+
+        private static string FormatLabel(GaitType gaitType)
+        {
+            return gaitType switch
+            {
+                GaitType.DogWalk => "WALK",
+                GaitType.DogTrot => "TROT",
+                GaitType.DogCanter => "CANTER",
+                GaitType.DogGallop => "GALLOP",
+                _ => "IDLE",
+            };
         }
     }
 }
