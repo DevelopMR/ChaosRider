@@ -283,7 +283,7 @@ namespace ChaosRider.Animals
             return gaitType switch
             {
                 GaitType.DogWalk => ScaleGait(dogTrot, GaitType.DogWalk, 1.35f, 1.55f, 0.74f, 0.25f, 0.75f, 0f, 0.5f, 0.55f, 1.25f, 0.7f, 0.45f, 0.55f, 0.2f),
-                GaitType.DogCanter => ScaleGait(dogTrot, GaitType.DogCanter, 1.1f, 0.9f, 0.44f, 0.55f, 0.3f, 0.3f, 0f, 1.25f, 1.55f, 1.25f, 1.45f, 1.8f, 0.95f),
+                GaitType.DogCanter => ScaleGait(dogTrot, GaitType.DogCanter, 1.18f, 0.95f, 0.5f, 0.66f, 0.34f, 0.34f, 0f, 1.08f, 1.22f, 0.65f, 1.05f, 1.15f, 0.55f),
                 GaitType.DogGallop => ScaleGait(dogTrot, GaitType.DogGallop, 0.78f, 0.65f, 0.34f, 0.5f, 0.65f, 0.18f, 0f, 1.45f, 2.15f, 1.05f, 1.85f, 2.6f, 0.75f),
                 _ => dogTrot,
             };
@@ -312,6 +312,12 @@ namespace ChaosRider.Animals
 
         private void ApplyTorsoCadence(RuntimeGait runtimeGait, float rhythmStrength, float surgeBlend)
         {
+            if (runtimeGait.gaitType == GaitType.DogCanter)
+            {
+                ApplyCanterCadence(runtimeGait, rhythmStrength, surgeBlend);
+                return;
+            }
+
             var cadence = gaitPhase * Mathf.PI * 2f;
             var diagonalBias = Mathf.Sin(cadence);
             var foreAftBias = Mathf.Sin(cadence - Mathf.PI * 0.25f);
@@ -324,12 +330,61 @@ namespace ChaosRider.Animals
 
         private void UpdateRideSignals(RuntimeGait runtimeGait, float speedIntent)
         {
+            if (runtimeGait.gaitType == GaitType.DogCanter)
+            {
+                UpdateCanterRideSignals(runtimeGait, speedIntent);
+                return;
+            }
+
             var cadence = gaitPhase * Mathf.PI * 2f;
             RideCouplingStrength = speedIntent;
             RideVerticalSignal = (Mathf.Abs(Mathf.Sin(cadence)) - 0.5f) * runtimeGait.rideVertical;
             RideForeAftSignal = Mathf.Sin(cadence - Mathf.PI * 0.25f) * runtimeGait.rideForeAft;
             RidePitchSignal = Mathf.Sin(cadence - Mathf.PI * 0.25f) * runtimeGait.ridePitch;
             RideRollSignal = -Mathf.Sin(cadence) * runtimeGait.rideRoll;
+        }
+
+        private void ApplyCanterCadence(RuntimeGait runtimeGait, float rhythmStrength, float surgeBlend)
+        {
+            var phase = Mathf.Repeat(gaitPhase, 1f);
+            var rearBeat = PhasePulse(phase, 0.06f, 0.18f);
+            var diagonalBeat = PhasePulse(phase, 0.38f, 0.2f);
+            var leadForeBeat = PhasePulse(phase, 0.72f, 0.18f);
+
+            var roll = (diagonalBeat - leadForeBeat * 0.6f) * runtimeGait.cadenceRollTorque * rhythmStrength;
+            var pitch = (rearBeat * 0.65f + diagonalBeat * 0.2f - leadForeBeat * 0.75f) * runtimeGait.cadencePitchTorque * rhythmStrength;
+            var surge = (rearBeat * 0.55f + diagonalBeat * 0.3f) * runtimeGait.cadenceSurgeForce * surgeBlend;
+
+            body.AddTorque(transform.forward * -roll, ForceMode.Acceleration);
+            body.AddTorque(transform.right * pitch, ForceMode.Acceleration);
+            body.AddForce(transform.forward * surge, ForceMode.Acceleration);
+        }
+
+        private void UpdateCanterRideSignals(RuntimeGait runtimeGait, float speedIntent)
+        {
+            var phase = Mathf.Repeat(gaitPhase, 1f);
+            var rearBeat = PhasePulse(phase, 0.06f, 0.18f);
+            var diagonalBeat = PhasePulse(phase, 0.38f, 0.2f);
+            var leadForeBeat = PhasePulse(phase, 0.72f, 0.18f);
+            var lift = rearBeat * 0.4f + diagonalBeat * 0.65f + leadForeBeat * 0.5f;
+
+            RideCouplingStrength = speedIntent;
+            RideVerticalSignal = (lift - 0.38f) * runtimeGait.rideVertical;
+            RideForeAftSignal = (rearBeat * 0.45f + diagonalBeat * 0.25f - leadForeBeat * 0.35f) * runtimeGait.rideForeAft;
+            RidePitchSignal = (rearBeat * 0.55f + diagonalBeat * 0.15f - leadForeBeat * 0.65f) * runtimeGait.ridePitch;
+            RideRollSignal = (leadForeBeat * 0.55f - diagonalBeat * 0.35f) * runtimeGait.rideRoll;
+        }
+
+        private static float PhasePulse(float phase, float center, float halfWidth)
+        {
+            var distance = Mathf.Abs(Mathf.DeltaAngle(phase * 360f, center * 360f)) / 360f;
+            if (distance >= halfWidth)
+            {
+                return 0f;
+            }
+
+            var normalized = distance / Mathf.Max(0.001f, halfWidth);
+            return 0.5f + Mathf.Cos(normalized * Mathf.PI) * 0.5f;
         }
 
         private void ClearRideSignals()

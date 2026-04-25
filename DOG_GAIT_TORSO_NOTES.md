@@ -89,26 +89,34 @@ This is the accepted baseline gait and should remain the parent model for animal
 
 Feel:
 
-Asymmetrical rolling gait.
+Asymmetrical rolling gait. Think of it as a low-power gallop before the dog digs in with the back and reaches full extension.
 
 Torso motion:
 
-- more fore-aft pitch than trot
+- more fore-aft pitch than trot, but much less than gallop
 - shoulders and hips rock through an uneven three-beat pattern
 - one side feels like the leading side
-- more surge/compression than trot
-- moderate suspension
+- more surge/compression than trot, but it should not feel like a launch
+- low, controlled suspension
+- spine flex is suggested, not fully expressed yet
 
 Force interpretation:
 
-- rear contact starts the cycle
-- diagonal or near-diagonal middle beat carries the torso forward
-- leading front contact finishes the rolling beat
+- rear contact starts the cycle and gives a soft push
+- diagonal middle beat carries the torso forward
+- leading front contact catches the body and finishes the roll
 - support is less symmetrical than trot
+- the torso should feel like rear -> carry -> catch, not bounce -> skip -> leap
 
 Prototype use:
 
 Good future bridge between controlled trot and chaotic gallop.
+
+Current code interpretation:
+
+- `DogCanter` uses separate canter pulse math instead of scaled trot cadence
+- phase targets are rear beat, diagonal carry, and lead-fore catch
+- canter should be rolling and slightly asymmetric without becoming a bucking or galloping motion
 
 ## Gallop
 
