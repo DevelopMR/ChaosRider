@@ -117,6 +117,7 @@ Current code interpretation:
 - `DogCanter` uses separate canter pulse math instead of scaled trot cadence
 - phase targets are rear beat, diagonal carry, and lead-fore catch
 - canter should be rolling and slightly asymmetric without becoming a bucking or galloping motion
+- manual gait audition gives canter a base forward speed so it is tested as a calm traveling gait, not as a canter-in-place
 
 ## Gallop
 

@@ -30,6 +30,10 @@ namespace ChaosRider.Animals
             public float rideForeAft;
             public float ridePitch;
             public float rideRoll;
+            public float manualAuditionSpeed;
+            public float manualCadenceBlend;
+            public float manualRhythmStrength;
+            public float manualSurgeBlend;
         }
 
         private enum VirtualLeg
@@ -98,10 +102,20 @@ namespace ChaosRider.Animals
             currentGait = useManualGaitSelection
                 ? selectedGait
                 : SelectGait(speedIntent, planarSpeed, gaitSelectionVelocity);
-            var cadenceBlend = useManualGaitSelection ? Mathf.Lerp(0.2f, 0.38f, speedIntent) : speedIntent;
-            var rhythmStrength = useManualGaitSelection ? 1f : speedIntent;
-            var surgeBlend = useManualGaitSelection ? Mathf.Lerp(0.08f, 0.28f, speedIntent) : speedIntent;
-            ApplyBodyTension(isGrounded, speedIntent, driveIntent);
+            var runtimeGait = currentGait == GaitType.Idle ? default : BuildRuntimeGait(currentGait);
+            var manualMotionIntent = useManualGaitSelection && currentGait != GaitType.Idle
+                ? Mathf.Clamp01(runtimeGait.manualAuditionSpeed / Mathf.Max(0.01f, gaitProfile.canterToGallopSpeed))
+                : speedIntent;
+            var cadenceBlend = useManualGaitSelection && currentGait != GaitType.Idle
+                ? runtimeGait.manualCadenceBlend
+                : speedIntent;
+            var rhythmStrength = useManualGaitSelection && currentGait != GaitType.Idle
+                ? runtimeGait.manualRhythmStrength
+                : speedIntent;
+            var surgeBlend = useManualGaitSelection && currentGait != GaitType.Idle
+                ? runtimeGait.manualSurgeBlend + Mathf.Max(0f, driveIntent) * 0.08f
+                : speedIntent;
+            ApplyBodyTension(isGrounded, Mathf.Max(speedIntent, manualMotionIntent), driveIntent);
 
             if (!isGrounded)
             {
@@ -118,9 +132,9 @@ namespace ChaosRider.Animals
                 return;
             }
 
-            var runtimeGait = BuildRuntimeGait(currentGait);
             var cycleDuration = Mathf.Lerp(runtimeGait.cycleDurationAtLowSpeed, runtimeGait.cycleDurationAtHighSpeed, cadenceBlend);
             gaitPhase = Mathf.Repeat(gaitPhase + Time.fixedDeltaTime / Mathf.Max(0.05f, cycleDuration), 1f);
+            ApplyManualAuditionDrive(runtimeGait, driveIntent);
 
             var frontLoad = 0f;
             var rearLoad = 0f;
@@ -278,12 +292,16 @@ namespace ChaosRider.Animals
                 rideForeAft = 0.45f,
                 ridePitch = 0.75f,
                 rideRoll = 0.85f,
+                manualAuditionSpeed = 1.8f,
+                manualCadenceBlend = 0.45f,
+                manualRhythmStrength = 0.9f,
+                manualSurgeBlend = 0.16f,
             };
 
             return gaitType switch
             {
                 GaitType.DogWalk => ScaleGait(dogTrot, GaitType.DogWalk, 1.35f, 1.55f, 0.74f, 0.25f, 0.75f, 0f, 0.5f, 0.55f, 1.25f, 0.7f, 0.45f, 0.55f, 0.2f),
-                GaitType.DogCanter => ScaleGait(dogTrot, GaitType.DogCanter, 1.18f, 0.95f, 0.5f, 0.66f, 0.34f, 0.34f, 0f, 1.08f, 1.22f, 0.65f, 1.05f, 1.15f, 0.55f),
+                GaitType.DogCanter => ScaleGait(dogTrot, GaitType.DogCanter, 1.18f, 0.95f, 0.56f, 0.68f, 0.36f, 0.36f, 0f, 0.95f, 1.08f, 0.38f, 0.38f, 0.55f, 0.28f),
                 GaitType.DogGallop => ScaleGait(dogTrot, GaitType.DogGallop, 0.78f, 0.65f, 0.34f, 0.5f, 0.65f, 0.18f, 0f, 1.45f, 2.15f, 1.05f, 1.85f, 2.6f, 0.75f),
                 _ => dogTrot,
             };
@@ -307,7 +325,33 @@ namespace ChaosRider.Animals
             source.rideRoll *= rideRollScale;
             source.rideForeAft *= surgeScale;
             source.ridePitch *= pitchScale;
+            ApplyManualAuditionDefaults(ref source);
             return source;
+        }
+
+        private static void ApplyManualAuditionDefaults(ref RuntimeGait runtimeGait)
+        {
+            switch (runtimeGait.gaitType)
+            {
+                case GaitType.DogWalk:
+                    runtimeGait.manualAuditionSpeed = 0.9f;
+                    runtimeGait.manualCadenceBlend = 0.22f;
+                    runtimeGait.manualRhythmStrength = 0.75f;
+                    runtimeGait.manualSurgeBlend = 0.1f;
+                    break;
+                case GaitType.DogCanter:
+                    runtimeGait.manualAuditionSpeed = 3.0f;
+                    runtimeGait.manualCadenceBlend = 0.62f;
+                    runtimeGait.manualRhythmStrength = 0.62f;
+                    runtimeGait.manualSurgeBlend = 0.18f;
+                    break;
+                case GaitType.DogGallop:
+                    runtimeGait.manualAuditionSpeed = 4.4f;
+                    runtimeGait.manualCadenceBlend = 0.82f;
+                    runtimeGait.manualRhythmStrength = 1f;
+                    runtimeGait.manualSurgeBlend = 0.32f;
+                    break;
+            }
         }
 
         private void ApplyTorsoCadence(RuntimeGait runtimeGait, float rhythmStrength, float surgeBlend)
@@ -347,13 +391,13 @@ namespace ChaosRider.Animals
         private void ApplyCanterCadence(RuntimeGait runtimeGait, float rhythmStrength, float surgeBlend)
         {
             var phase = Mathf.Repeat(gaitPhase, 1f);
-            var rearBeat = PhasePulse(phase, 0.06f, 0.18f);
-            var diagonalBeat = PhasePulse(phase, 0.38f, 0.2f);
-            var leadForeBeat = PhasePulse(phase, 0.72f, 0.18f);
+            var rearBeat = PhasePulse(phase, 0.08f, 0.24f);
+            var diagonalBeat = PhasePulse(phase, 0.4f, 0.24f);
+            var leadForeBeat = PhasePulse(phase, 0.72f, 0.22f);
 
-            var roll = (diagonalBeat - leadForeBeat * 0.6f) * runtimeGait.cadenceRollTorque * rhythmStrength;
-            var pitch = (rearBeat * 0.65f + diagonalBeat * 0.2f - leadForeBeat * 0.75f) * runtimeGait.cadencePitchTorque * rhythmStrength;
-            var surge = (rearBeat * 0.55f + diagonalBeat * 0.3f) * runtimeGait.cadenceSurgeForce * surgeBlend;
+            var roll = (diagonalBeat * 0.45f - leadForeBeat * 0.25f) * runtimeGait.cadenceRollTorque * rhythmStrength;
+            var pitch = (rearBeat * 0.18f + diagonalBeat * 0.08f - leadForeBeat * 0.22f) * runtimeGait.cadencePitchTorque * rhythmStrength;
+            var surge = (0.45f + rearBeat * 0.12f + diagonalBeat * 0.1f + leadForeBeat * 0.05f) * runtimeGait.cadenceSurgeForce * surgeBlend;
 
             body.AddTorque(transform.forward * -roll, ForceMode.Acceleration);
             body.AddTorque(transform.right * pitch, ForceMode.Acceleration);
@@ -363,16 +407,32 @@ namespace ChaosRider.Animals
         private void UpdateCanterRideSignals(RuntimeGait runtimeGait, float speedIntent)
         {
             var phase = Mathf.Repeat(gaitPhase, 1f);
-            var rearBeat = PhasePulse(phase, 0.06f, 0.18f);
-            var diagonalBeat = PhasePulse(phase, 0.38f, 0.2f);
-            var leadForeBeat = PhasePulse(phase, 0.72f, 0.18f);
-            var lift = rearBeat * 0.4f + diagonalBeat * 0.65f + leadForeBeat * 0.5f;
+            var rearBeat = PhasePulse(phase, 0.08f, 0.24f);
+            var diagonalBeat = PhasePulse(phase, 0.4f, 0.24f);
+            var leadForeBeat = PhasePulse(phase, 0.72f, 0.22f);
+            var lift = rearBeat * 0.18f + diagonalBeat * 0.28f + leadForeBeat * 0.22f;
 
             RideCouplingStrength = speedIntent;
-            RideVerticalSignal = (lift - 0.38f) * runtimeGait.rideVertical;
-            RideForeAftSignal = (rearBeat * 0.45f + diagonalBeat * 0.25f - leadForeBeat * 0.35f) * runtimeGait.rideForeAft;
-            RidePitchSignal = (rearBeat * 0.55f + diagonalBeat * 0.15f - leadForeBeat * 0.65f) * runtimeGait.ridePitch;
-            RideRollSignal = (leadForeBeat * 0.55f - diagonalBeat * 0.35f) * runtimeGait.rideRoll;
+            RideVerticalSignal = (lift - 0.16f) * runtimeGait.rideVertical * 0.35f;
+            RideForeAftSignal = (rearBeat * 0.18f + diagonalBeat * 0.12f - leadForeBeat * 0.16f) * runtimeGait.rideForeAft;
+            RidePitchSignal = (rearBeat * 0.16f + diagonalBeat * 0.06f - leadForeBeat * 0.18f) * runtimeGait.ridePitch;
+            RideRollSignal = (leadForeBeat * 0.18f - diagonalBeat * 0.12f) * runtimeGait.rideRoll;
+        }
+
+        private void ApplyManualAuditionDrive(RuntimeGait runtimeGait, float driveIntent)
+        {
+            if (!useManualGaitSelection || runtimeGait.manualAuditionSpeed <= 0f)
+            {
+                return;
+            }
+
+            var localVelocity = transform.InverseTransformDirection(body.linearVelocity);
+            var forwardBoost = Mathf.Max(0f, driveIntent) * runtimeGait.manualAuditionSpeed * 0.25f;
+            var reinIn = Mathf.Max(0f, -driveIntent);
+            var targetSpeed = Mathf.Lerp(runtimeGait.manualAuditionSpeed + forwardBoost, 0f, reinIn);
+            var speedError = Mathf.Clamp(targetSpeed - localVelocity.z, -2.5f, 2.5f);
+
+            body.AddRelativeForce(Vector3.forward * speedError * gaitProfile.manualAuditionDrive, ForceMode.Acceleration);
         }
 
         private static float PhasePulse(float phase, float center, float halfWidth)
