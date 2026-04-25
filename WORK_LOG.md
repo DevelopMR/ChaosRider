@@ -44,6 +44,7 @@
 - Decoupled manual gait audition from forward input side effects: pressing forward now adds propulsion with only modest cadence change, while rhythm strength and longitudinal damping stay much closer to the selected gait's identity.
 - Redesigned `DogCanter` as its own low-power gallop/lope: added rear -> diagonal -> lead-fore torso pulse math, softened the canter scaling, and documented the canter as a controlled rolling gait rather than scaled trot.
 - Reassessed `DogCanter` after playtest feedback: manual gait audition now assigns base travel speeds per gait, and canter has flatter pitch/vertical ride signals so it reads more like a calm high-speed lope than a bucking bronco.
+- Restored `DogGallop` separation after canter tuning: gallop now has its own compress -> launch -> front-catch cadence and stronger audition speed/rhythm so it no longer reads as a fast trot.
 - Architectural pivot approved: we are moving from rigidbody-only buck/steer tuning toward a torso-first gait engine, with the rider treated as cargo on the animal body.
 - Added documentation for the new locomotion direction, including future `AnimalMood`, `AnimalProfile`, `GaitProfile`, and torso-only gait timing driven by virtual contact forces.
 

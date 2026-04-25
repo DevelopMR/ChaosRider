@@ -179,3 +179,4 @@ Current priority:
 - preserve the accepted `DogTrot` feel
 - use walk/canter/gallop as readable examples
 - avoid adding visual spine complexity until the gameplay benefit is clear
+- keep canter as a restrained traveling lope while giving gallop its own compress -> launch -> front-catch cycle, not a faster trot sine wave

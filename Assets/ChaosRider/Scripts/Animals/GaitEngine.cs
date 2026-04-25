@@ -321,6 +321,8 @@ namespace ChaosRider.Animals
             source.driveForce *= driveScale;
             source.rollTorque *= rollScale;
             source.pitchTorque *= pitchScale;
+            source.cadenceRollTorque *= rollScale;
+            source.cadencePitchTorque *= pitchScale;
             source.cadenceSurgeForce *= surgeScale;
             source.rideRoll *= rideRollScale;
             source.rideForeAft *= surgeScale;
@@ -346,10 +348,10 @@ namespace ChaosRider.Animals
                     runtimeGait.manualSurgeBlend = 0.18f;
                     break;
                 case GaitType.DogGallop:
-                    runtimeGait.manualAuditionSpeed = 4.4f;
-                    runtimeGait.manualCadenceBlend = 0.82f;
-                    runtimeGait.manualRhythmStrength = 1f;
-                    runtimeGait.manualSurgeBlend = 0.32f;
+                    runtimeGait.manualAuditionSpeed = 4.9f;
+                    runtimeGait.manualCadenceBlend = 0.88f;
+                    runtimeGait.manualRhythmStrength = 1.15f;
+                    runtimeGait.manualSurgeBlend = 0.42f;
                     break;
             }
         }
@@ -359,6 +361,12 @@ namespace ChaosRider.Animals
             if (runtimeGait.gaitType == GaitType.DogCanter)
             {
                 ApplyCanterCadence(runtimeGait, rhythmStrength, surgeBlend);
+                return;
+            }
+
+            if (runtimeGait.gaitType == GaitType.DogGallop)
+            {
+                ApplyGallopCadence(runtimeGait, rhythmStrength, surgeBlend);
                 return;
             }
 
@@ -377,6 +385,12 @@ namespace ChaosRider.Animals
             if (runtimeGait.gaitType == GaitType.DogCanter)
             {
                 UpdateCanterRideSignals(runtimeGait, speedIntent);
+                return;
+            }
+
+            if (runtimeGait.gaitType == GaitType.DogGallop)
+            {
+                UpdateGallopRideSignals(runtimeGait, speedIntent);
                 return;
             }
 
@@ -417,6 +431,45 @@ namespace ChaosRider.Animals
             RideForeAftSignal = (rearBeat * 0.18f + diagonalBeat * 0.12f - leadForeBeat * 0.16f) * runtimeGait.rideForeAft;
             RidePitchSignal = (rearBeat * 0.16f + diagonalBeat * 0.06f - leadForeBeat * 0.18f) * runtimeGait.ridePitch;
             RideRollSignal = (leadForeBeat * 0.18f - diagonalBeat * 0.12f) * runtimeGait.rideRoll;
+        }
+
+        private void ApplyGallopCadence(RuntimeGait runtimeGait, float rhythmStrength, float surgeBlend)
+        {
+            var phase = Mathf.Repeat(gaitPhase, 1f);
+            var rearLoad = PhasePulse(phase, 0.08f, 0.16f);
+            var extension = PhasePulse(phase, 0.32f, 0.18f);
+            var frontCatch = PhasePulse(phase, 0.62f, 0.2f);
+            var recovery = PhasePulse(phase, 0.86f, 0.16f);
+
+            var pitch = (rearLoad * 0.75f + extension * 0.35f - frontCatch * 0.95f - recovery * 0.2f)
+                * runtimeGait.cadencePitchTorque
+                * rhythmStrength;
+            var roll = (rearLoad * 0.28f - frontCatch * 0.22f + recovery * 0.14f)
+                * runtimeGait.cadenceRollTorque
+                * rhythmStrength;
+            var surge = (rearLoad * 0.95f + extension * 0.65f - frontCatch * 0.18f)
+                * runtimeGait.cadenceSurgeForce
+                * surgeBlend;
+
+            body.AddTorque(transform.right * pitch, ForceMode.Acceleration);
+            body.AddTorque(transform.forward * -roll, ForceMode.Acceleration);
+            body.AddForce(transform.forward * surge, ForceMode.Acceleration);
+        }
+
+        private void UpdateGallopRideSignals(RuntimeGait runtimeGait, float speedIntent)
+        {
+            var phase = Mathf.Repeat(gaitPhase, 1f);
+            var rearLoad = PhasePulse(phase, 0.08f, 0.16f);
+            var extension = PhasePulse(phase, 0.32f, 0.18f);
+            var frontCatch = PhasePulse(phase, 0.62f, 0.2f);
+            var recovery = PhasePulse(phase, 0.86f, 0.16f);
+            var suspension = PhasePulse(phase, 0.42f, 0.18f);
+
+            RideCouplingStrength = speedIntent;
+            RideVerticalSignal = (rearLoad * 0.65f + frontCatch * 0.45f + suspension * 0.8f - 0.35f) * runtimeGait.rideVertical;
+            RideForeAftSignal = (rearLoad * 0.75f + extension * 0.55f - frontCatch * 0.5f - recovery * 0.2f) * runtimeGait.rideForeAft;
+            RidePitchSignal = (rearLoad * 0.8f + extension * 0.45f - frontCatch * 0.95f) * runtimeGait.ridePitch;
+            RideRollSignal = (rearLoad * 0.28f - frontCatch * 0.22f + recovery * 0.14f) * runtimeGait.rideRoll;
         }
 
         private void ApplyManualAuditionDrive(RuntimeGait runtimeGait, float driveIntent)
