@@ -123,13 +123,10 @@ namespace ChaosRider.Rider
             }
 
             var desiredPosition = seatAnchor.position;
-            if (gaitEngine != null && gaitEngine.CurrentGait == GaitType.DogTrot)
+            if (gaitEngine != null && gaitEngine.RideCouplingStrength > 0f)
             {
-                var gaitCycle = gaitEngine.GaitPhase * Mathf.PI * 2f;
-                var beatLift = Mathf.Abs(Mathf.Sin(gaitCycle));
-                var foreAftShift = Mathf.Sin(gaitCycle - Mathf.PI * 0.25f);
-                desiredPosition += seatAnchor.up * ((beatLift - 0.5f) * gaitRideHeight);
-                desiredPosition += seatAnchor.forward * (foreAftShift * gaitForeAftShift);
+                desiredPosition += seatAnchor.up * (gaitEngine.RideVerticalSignal * gaitRideHeight * gaitEngine.RideCouplingStrength);
+                desiredPosition += seatAnchor.forward * (gaitEngine.RideForeAftSignal * gaitForeAftShift * gaitEngine.RideCouplingStrength);
             }
 
             mountedRiderRoot.position = Vector3.Lerp(mountedRiderRoot.position, desiredPosition, 1f - Mathf.Exp(-riderPositionSharpness * Time.deltaTime));
@@ -137,11 +134,10 @@ namespace ChaosRider.Rider
             var localAngularVelocity = transform.InverseTransformDirection(animalBody.angularVelocity);
             var leanPitch = -localAngularVelocity.x * riderLean;
             var leanRoll = -localAngularVelocity.z * riderRoll;
-            if (gaitEngine != null && gaitEngine.CurrentGait == GaitType.DogTrot)
+            if (gaitEngine != null && gaitEngine.RideCouplingStrength > 0f)
             {
-                var gaitCycle = gaitEngine.GaitPhase * Mathf.PI * 2f;
-                leanPitch += Mathf.Sin(gaitCycle - Mathf.PI * 0.25f) * gaitPitchCoupling;
-                leanRoll += -Mathf.Sin(gaitCycle) * gaitRollCoupling;
+                leanPitch += gaitEngine.RidePitchSignal * gaitPitchCoupling * gaitEngine.RideCouplingStrength;
+                leanRoll += gaitEngine.RideRollSignal * gaitRollCoupling * gaitEngine.RideCouplingStrength;
             }
 
             var desiredRotation = seatAnchor.rotation * Quaternion.Euler(leanPitch, 0f, leanRoll);

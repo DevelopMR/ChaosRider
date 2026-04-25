@@ -110,12 +110,11 @@ namespace ChaosRider.Cameras
             var gaitPitch = 0f;
             var gaitRoll = 0f;
 
-            if (gaitEngine != null && gaitEngine.CurrentGait == GaitType.DogTrot)
+            if (gaitEngine != null && gaitEngine.RideCouplingStrength > 0f)
             {
-                var gaitCycle = gaitEngine.GaitPhase * Mathf.PI * 2f;
-                bobSignal = Mathf.Abs(Mathf.Sin(gaitCycle)) - 0.5f;
-                gaitPitch = Mathf.Sin(gaitCycle - Mathf.PI * 0.25f) * mountedGaitPitch * normalizedSpeed;
-                gaitRoll = -Mathf.Sin(gaitCycle) * mountedGaitRoll * normalizedSpeed;
+                bobSignal = gaitEngine.RideVerticalSignal;
+                gaitPitch = gaitEngine.RidePitchSignal * mountedGaitPitch * normalizedSpeed * gaitEngine.RideCouplingStrength;
+                gaitRoll = gaitEngine.RideRollSignal * mountedGaitRoll * normalizedSpeed * gaitEngine.RideCouplingStrength;
             }
 
             var bob = Vector3.up * (bobSignal * mountedBobAmount * normalizedSpeed);

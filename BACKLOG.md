@@ -6,6 +6,7 @@
 - Reduce remaining rider/ejection oddities during trot coupling
 - Improve mounted readability of the trot beat
 - Record the accepted trot baseline as the parent model for future animals
+- Validate speed-based transitions between `DogWalk`, `DogTrot`, `DogCanter`, and `DogGallop`
 
 ## Next
 

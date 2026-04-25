@@ -95,6 +95,7 @@ namespace ChaosRider.Game
 
             bull.AddComponent<AnimalLocomotionController>();
             bull.AddComponent<GaitEngine>();
+            bull.AddComponent<GaitDebugOverlay>();
             var animalController = bull.AddComponent<AnimalPhysicsController>();
             CreateCameraAnchors(bull.transform);
 

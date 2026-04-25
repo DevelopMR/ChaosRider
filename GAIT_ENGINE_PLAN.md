@@ -286,6 +286,21 @@ Immediate focus from here:
 - preserve the stable baseline
 - avoid destabilizing control while improving feel
 
+## Expanded Example Gaits
+
+The first expansion after accepting `DogTrot` is a speed-selected dog gait set:
+
+- `DogWalk`
+- `DogTrot`
+- `DogCanter`
+- `DogGallop`
+
+These are examples for feel testing, not final animal profiles.
+
+The rider and camera should consume gait output signals rather than hardcoding one trot rhythm.
+
+Reference translation notes live in `DOG_GAIT_TORSO_NOTES.md`.
+
 ## Immediate Next Step
 
 Implement a minimal torso-only `DogTrot` using:

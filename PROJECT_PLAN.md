@@ -191,12 +191,14 @@ Deliverables:
 - reduce residual lean/twist and remaining odd rider energy spikes
 - improve mounted readability of the trot beat
 - keep zero-speed turning intact
+- add speed-based transitions through example dog gaits
 
 Test:
 
 - trot still reads as a trot
 - rider stays coupled without random launches
 - zero-speed turning remains reliable
+- on-screen gait label matches the active movement state
 - this baseline remains suitable as the parent model for future animals
 
 ### Slice 7: Damage And Injury Summary

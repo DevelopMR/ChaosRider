@@ -5,6 +5,33 @@ namespace ChaosRider.Animals
     [RequireComponent(typeof(Rigidbody))]
     public class GaitEngine : MonoBehaviour
     {
+        private struct RuntimeGait
+        {
+            public GaitType gaitType;
+            public float cycleDurationAtLowSpeed;
+            public float cycleDurationAtHighSpeed;
+            public float stanceFraction;
+            public float frontLeftPhaseOffset;
+            public float frontRightPhaseOffset;
+            public float rearLeftPhaseOffset;
+            public float rearRightPhaseOffset;
+            public float supportForce;
+            public float driveForce;
+            public float frontSteerForce;
+            public float rearCounterSteerForce;
+            public float frontSupportBias;
+            public float rearSupportBias;
+            public float rollTorque;
+            public float pitchTorque;
+            public float cadenceRollTorque;
+            public float cadencePitchTorque;
+            public float cadenceSurgeForce;
+            public float rideVertical;
+            public float rideForeAft;
+            public float ridePitch;
+            public float rideRoll;
+        }
+
         private enum VirtualLeg
         {
             FrontLeft = 0,
@@ -22,9 +49,16 @@ namespace ChaosRider.Animals
 
         private Rigidbody body;
         private float gaitPhase;
+        private GaitType currentGait = GaitType.Idle;
 
         public float GaitPhase => gaitPhase;
-        public GaitType CurrentGait => gaitProfile.gaitType;
+        public GaitType CurrentGait => currentGait;
+        public string CurrentGaitLabel => currentGait.ToString().Replace("Dog", string.Empty);
+        public float RideVerticalSignal { get; private set; }
+        public float RideForeAftSignal { get; private set; }
+        public float RidePitchSignal { get; private set; }
+        public float RideRollSignal { get; private set; }
+        public float RideCouplingStrength { get; private set; }
 
         public void Configure(Rigidbody targetBody)
         {
@@ -44,22 +78,27 @@ namespace ChaosRider.Animals
             }
 
             var speedIntent = Mathf.Clamp01(Mathf.Abs(throttleInput));
+            var planarSpeed = Vector3.ProjectOnPlane(body.linearVelocity, Vector3.up).magnitude;
+            currentGait = SelectGait(speedIntent, planarSpeed);
             ApplyBodyTension(isGrounded, speedIntent, throttleInput);
 
             if (!isGrounded)
             {
+                ClearRideSignals();
                 ApplyIdleSettling();
                 return;
             }
 
-            if (speedIntent < gaitProfile.idleThreshold)
+            if (currentGait == GaitType.Idle)
             {
+                ClearRideSignals();
                 ApplyIdleTurning(steeringInput);
                 ApplyIdleSettling();
                 return;
             }
 
-            var cycleDuration = Mathf.Lerp(gaitProfile.cycleDurationAtLowSpeed, gaitProfile.cycleDurationAtHighSpeed, speedIntent);
+            var runtimeGait = BuildRuntimeGait(currentGait);
+            var cycleDuration = Mathf.Lerp(runtimeGait.cycleDurationAtLowSpeed, runtimeGait.cycleDurationAtHighSpeed, speedIntent);
             gaitPhase = Mathf.Repeat(gaitPhase + Time.fixedDeltaTime / Mathf.Max(0.05f, cycleDuration), 1f);
 
             var frontLoad = 0f;
@@ -67,23 +106,24 @@ namespace ChaosRider.Animals
             var leftLoad = 0f;
             var rightLoad = 0f;
 
-            ApplyLeg(VirtualLeg.FrontLeft, gaitProfile.frontLeftPhaseOffset, true, true, throttleInput, steeringInput, speedIntent, ref frontLoad, ref leftLoad);
-            ApplyLeg(VirtualLeg.FrontRight, gaitProfile.frontRightPhaseOffset, true, false, throttleInput, steeringInput, speedIntent, ref frontLoad, ref rightLoad);
-            ApplyLeg(VirtualLeg.RearLeft, gaitProfile.rearLeftPhaseOffset, false, true, throttleInput, steeringInput, speedIntent, ref rearLoad, ref leftLoad);
-            ApplyLeg(VirtualLeg.RearRight, gaitProfile.rearRightPhaseOffset, false, false, throttleInput, steeringInput, speedIntent, ref rearLoad, ref rightLoad);
+            ApplyLeg(runtimeGait, VirtualLeg.FrontLeft, runtimeGait.frontLeftPhaseOffset, true, true, throttleInput, steeringInput, speedIntent, ref frontLoad, ref leftLoad);
+            ApplyLeg(runtimeGait, VirtualLeg.FrontRight, runtimeGait.frontRightPhaseOffset, true, false, throttleInput, steeringInput, speedIntent, ref frontLoad, ref rightLoad);
+            ApplyLeg(runtimeGait, VirtualLeg.RearLeft, runtimeGait.rearLeftPhaseOffset, false, true, throttleInput, steeringInput, speedIntent, ref rearLoad, ref leftLoad);
+            ApplyLeg(runtimeGait, VirtualLeg.RearRight, runtimeGait.rearRightPhaseOffset, false, false, throttleInput, steeringInput, speedIntent, ref rearLoad, ref rightLoad);
 
             var rollImbalance = rightLoad - leftLoad;
             var pitchImbalance = frontLoad - rearLoad;
 
-            body.AddTorque(transform.forward * (-rollImbalance * gaitProfile.rollTorque), ForceMode.Acceleration);
-            body.AddTorque(transform.right * (pitchImbalance * gaitProfile.pitchTorque), ForceMode.Acceleration);
-            ApplyTorsoCadence(speedIntent, throttleInput);
+            body.AddTorque(transform.forward * (-rollImbalance * runtimeGait.rollTorque), ForceMode.Acceleration);
+            body.AddTorque(transform.right * (pitchImbalance * runtimeGait.pitchTorque), ForceMode.Acceleration);
+            ApplyTorsoCadence(runtimeGait, speedIntent, throttleInput);
+            UpdateRideSignals(runtimeGait, speedIntent);
         }
 
-        private void ApplyLeg(VirtualLeg leg, float phaseOffset, bool isFront, bool isLeft, float throttleInput, float steeringInput, float speedIntent, ref float foreAftLoad, ref float lateralLoad)
+        private void ApplyLeg(RuntimeGait runtimeGait, VirtualLeg leg, float phaseOffset, bool isFront, bool isLeft, float throttleInput, float steeringInput, float speedIntent, ref float foreAftLoad, ref float lateralLoad)
         {
             var legPhase = Mathf.Repeat(gaitPhase + phaseOffset, 1f);
-            var inStance = legPhase < gaitProfile.stanceFraction;
+            var inStance = legPhase < runtimeGait.stanceFraction;
             var contactPoint = GetContactPoint(isFront, isLeft);
 
             if (drawContactPoints)
@@ -96,16 +136,16 @@ namespace ChaosRider.Animals
                 return;
             }
 
-            var stanceT = legPhase / gaitProfile.stanceFraction;
+            var stanceT = legPhase / runtimeGait.stanceFraction;
             var loadPulse = EvaluateLoadPulse(stanceT);
-            var supportBias = isFront ? gaitProfile.frontSupportBias : gaitProfile.rearSupportBias;
+            var supportBias = isFront ? runtimeGait.frontSupportBias : runtimeGait.rearSupportBias;
             var driveBias = isFront ? Mathf.Lerp(0.35f, 0.45f, 1f - animalProfile.hindDriveBias) : animalProfile.hindDriveBias;
 
-            var supportForce = Vector3.up * gaitProfile.supportForce * loadPulse * supportBias;
+            var supportForce = Vector3.up * runtimeGait.supportForce * loadPulse * supportBias;
             body.AddForceAtPosition(supportForce, contactPoint, ForceMode.Acceleration);
 
             var driveForceMagnitude = throttleInput >= 0f
-                ? gaitProfile.driveForce * throttleInput * loadPulse * driveBias
+                ? runtimeGait.driveForce * throttleInput * loadPulse * driveBias
                 : gaitProfile.brakingForce * throttleInput * loadPulse * supportBias;
             body.AddForceAtPosition(transform.forward * driveForceMagnitude, contactPoint, ForceMode.Acceleration);
 
@@ -113,11 +153,11 @@ namespace ChaosRider.Animals
             var steerStrength = steeringInput * loadPulse * steerScale;
             if (isFront)
             {
-                body.AddForceAtPosition(transform.right * gaitProfile.frontSteerForce * steerStrength, contactPoint, ForceMode.Acceleration);
+                body.AddForceAtPosition(transform.right * runtimeGait.frontSteerForce * steerStrength, contactPoint, ForceMode.Acceleration);
             }
             else
             {
-                body.AddForceAtPosition(-transform.right * gaitProfile.rearCounterSteerForce * steerStrength, contactPoint, ForceMode.Acceleration);
+                body.AddForceAtPosition(-transform.right * runtimeGait.rearCounterSteerForce * steerStrength, contactPoint, ForceMode.Acceleration);
             }
 
             foreAftLoad += loadPulse * supportBias;
@@ -145,16 +185,119 @@ namespace ChaosRider.Animals
             return Mathf.SmoothStep(0.25f, 0.92f, arch);
         }
 
-        private void ApplyTorsoCadence(float speedIntent, float throttleInput)
+        private GaitType SelectGait(float speedIntent, float planarSpeed)
+        {
+            if (speedIntent < gaitProfile.idleThreshold && planarSpeed <= gaitProfile.idlePivotPlanarSpeedThreshold)
+            {
+                return GaitType.Idle;
+            }
+
+            if (planarSpeed < gaitProfile.walkToTrotSpeed)
+            {
+                return GaitType.DogWalk;
+            }
+
+            if (planarSpeed < gaitProfile.trotToCanterSpeed)
+            {
+                return GaitType.DogTrot;
+            }
+
+            if (planarSpeed < gaitProfile.canterToGallopSpeed)
+            {
+                return GaitType.DogCanter;
+            }
+
+            return GaitType.DogGallop;
+        }
+
+        private RuntimeGait BuildRuntimeGait(GaitType gaitType)
+        {
+            var dogTrot = new RuntimeGait
+            {
+                gaitType = GaitType.DogTrot,
+                cycleDurationAtLowSpeed = gaitProfile.cycleDurationAtLowSpeed,
+                cycleDurationAtHighSpeed = gaitProfile.cycleDurationAtHighSpeed,
+                stanceFraction = gaitProfile.stanceFraction,
+                frontLeftPhaseOffset = gaitProfile.frontLeftPhaseOffset,
+                frontRightPhaseOffset = gaitProfile.frontRightPhaseOffset,
+                rearLeftPhaseOffset = gaitProfile.rearLeftPhaseOffset,
+                rearRightPhaseOffset = gaitProfile.rearRightPhaseOffset,
+                supportForce = gaitProfile.supportForce,
+                driveForce = gaitProfile.driveForce,
+                frontSteerForce = gaitProfile.frontSteerForce,
+                rearCounterSteerForce = gaitProfile.rearCounterSteerForce,
+                frontSupportBias = gaitProfile.frontSupportBias,
+                rearSupportBias = gaitProfile.rearSupportBias,
+                rollTorque = gaitProfile.rollTorque,
+                pitchTorque = gaitProfile.pitchTorque,
+                cadenceRollTorque = gaitProfile.cadenceRollTorque,
+                cadencePitchTorque = gaitProfile.cadencePitchTorque,
+                cadenceSurgeForce = gaitProfile.cadenceSurgeForce,
+                rideVertical = 1f,
+                rideForeAft = 0.45f,
+                ridePitch = 0.75f,
+                rideRoll = 0.85f,
+            };
+
+            return gaitType switch
+            {
+                GaitType.DogWalk => ScaleGait(dogTrot, GaitType.DogWalk, 1.35f, 1.55f, 0.74f, 0.25f, 0.75f, 0f, 0.5f, 0.55f, 0.75f, 0.7f, 0.45f, 0.55f, 0.2f),
+                GaitType.DogCanter => ScaleGait(dogTrot, GaitType.DogCanter, 1.1f, 0.9f, 0.44f, 0.55f, 0.3f, 0.3f, 0f, 1.25f, 1.25f, 1.25f, 1.45f, 1.8f, 0.95f),
+                GaitType.DogGallop => ScaleGait(dogTrot, GaitType.DogGallop, 0.78f, 0.65f, 0.34f, 0.5f, 0.65f, 0.18f, 0f, 1.45f, 1.6f, 1.05f, 1.85f, 2.6f, 0.75f),
+                _ => dogTrot,
+            };
+        }
+
+        private static RuntimeGait ScaleGait(RuntimeGait source, GaitType gaitType, float lowCycleScale, float highCycleScale, float stanceFraction, float frontLeft, float frontRight, float rearLeft, float rearRight, float supportScale, float driveScale, float rollScale, float pitchScale, float surgeScale, float rideRollScale)
+        {
+            source.gaitType = gaitType;
+            source.cycleDurationAtLowSpeed *= lowCycleScale;
+            source.cycleDurationAtHighSpeed *= highCycleScale;
+            source.stanceFraction = stanceFraction;
+            source.frontLeftPhaseOffset = frontLeft;
+            source.frontRightPhaseOffset = frontRight;
+            source.rearLeftPhaseOffset = rearLeft;
+            source.rearRightPhaseOffset = rearRight;
+            source.supportForce *= supportScale;
+            source.driveForce *= driveScale;
+            source.rollTorque *= rollScale;
+            source.pitchTorque *= pitchScale;
+            source.cadenceSurgeForce *= surgeScale;
+            source.rideRoll *= rideRollScale;
+            source.rideForeAft *= surgeScale;
+            source.ridePitch *= pitchScale;
+            return source;
+        }
+
+        private void ApplyTorsoCadence(RuntimeGait runtimeGait, float speedIntent, float throttleInput)
         {
             var cadence = gaitPhase * Mathf.PI * 2f;
             var diagonalBias = Mathf.Sin(cadence);
             var foreAftBias = Mathf.Sin(cadence - Mathf.PI * 0.25f);
             var gaitScale = speedIntent * Mathf.Clamp01(Mathf.Abs(throttleInput));
 
-            body.AddTorque(transform.forward * (-diagonalBias * gaitProfile.cadenceRollTorque * gaitScale), ForceMode.Acceleration);
-            body.AddTorque(transform.right * (foreAftBias * gaitProfile.cadencePitchTorque * gaitScale), ForceMode.Acceleration);
-            body.AddForce(transform.forward * (Mathf.Max(0f, foreAftBias) * gaitProfile.cadenceSurgeForce * gaitScale), ForceMode.Acceleration);
+            body.AddTorque(transform.forward * (-diagonalBias * runtimeGait.cadenceRollTorque * gaitScale), ForceMode.Acceleration);
+            body.AddTorque(transform.right * (foreAftBias * runtimeGait.cadencePitchTorque * gaitScale), ForceMode.Acceleration);
+            body.AddForce(transform.forward * (Mathf.Max(0f, foreAftBias) * runtimeGait.cadenceSurgeForce * gaitScale), ForceMode.Acceleration);
+        }
+
+        private void UpdateRideSignals(RuntimeGait runtimeGait, float speedIntent)
+        {
+            var cadence = gaitPhase * Mathf.PI * 2f;
+            RideCouplingStrength = speedIntent;
+            RideVerticalSignal = (Mathf.Abs(Mathf.Sin(cadence)) - 0.5f) * runtimeGait.rideVertical;
+            RideForeAftSignal = Mathf.Sin(cadence - Mathf.PI * 0.25f) * runtimeGait.rideForeAft;
+            RidePitchSignal = Mathf.Sin(cadence - Mathf.PI * 0.25f) * runtimeGait.ridePitch;
+            RideRollSignal = -Mathf.Sin(cadence) * runtimeGait.rideRoll;
+        }
+
+        private void ClearRideSignals()
+        {
+            RideCouplingStrength = 0f;
+            RideVerticalSignal = 0f;
+            RideForeAftSignal = 0f;
+            RidePitchSignal = 0f;
+            RideRollSignal = 0f;
         }
 
         private void ApplyBodyTension(bool isGrounded, float speedIntent, float throttleInput)

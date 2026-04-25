@@ -80,6 +80,8 @@ What is next:
 - polish `Trot`
 - then adapt the same architecture toward other animals and gaits
 
+The first gait expansion now includes speed-selected examples for `DogWalk`, `DogTrot`, `DogCanter`, and `DogGallop`, with an on-screen gait label for playtesting.
+
 ## Working Rules
 
 1. Build the smallest playable version of each system first.
