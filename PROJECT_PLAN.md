@@ -201,6 +201,22 @@ Test:
 - on-screen gait label matches the active movement state
 - this baseline remains suitable as the parent model for future animals
 
+### Slice 6C: Canter/Gallop Identity Fix
+
+Deliverables:
+
+- preserve the accepted `DogTrot` feel
+- reassess `DogCanter` and `DogGallop` from the current playtest checkpoint
+- keep canter as a calm, high-speed lope rather than a broken gallop
+- make gallop visibly distinct from trot, with stronger compress/launch/catch character
+- use the manual gait selector for direct A/B testing independent of speed transitions
+
+Known current issue:
+
+- current `DogCanter` still reads more like a gallop
+- current `DogGallop` still reads more like a trot
+- first task after reboot should be this gait split, not destruction or broader feature work
+
 ### Slice 7: Damage And Injury Summary
 
 Deliverables:
@@ -277,11 +293,12 @@ If a system is hard to tune in the Inspector, it is too expensive for this phase
 
 ## Immediate Next Step
 
-Polish the settled `DogTrot` baseline first:
+Fix the `DogCanter` / `DogGallop` identity split first:
 
-- preserve the current controllable, readable trot
-- improve rider coupling and posture only where necessary
-- avoid destabilizing the zero-speed turning fix
-- use this polished trot as the parent baseline for future animal models
+- preserve the current controllable, readable `DogTrot`
+- use the manual gait selector to compare `CANTER` and `GALLOP` directly
+- reduce canter's gallop-like launch/roll
+- make gallop stop reading as trot
+- update `DOG_GAIT_TORSO_NOTES.md` with whatever finally works
 
 This keeps the project on a stable locomotion foundation instead of reopening the architecture question.

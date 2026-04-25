@@ -29,6 +29,9 @@ This repo is being developed in small vertical slices. Each slice should be play
 - Rider and mounted camera are coupled to gait phase instead of floating on independent motion.
 - Rider stability and ejection are now stable enough for repeated testing without random explosive disconnects.
 - Animal `Mood` is planned as a future behavior modifier; for now animals remain obedient.
+- Manual gait audition is active via the top-row gait selector.
+- `DogWalk` and `DogTrot` are useful test baselines.
+- `DogCanter` and `DogGallop` are not yet settled: current canter still reads too much like a gallop, and current gallop still reads too much like a trot.
 
 ## New Locomotion Direction
 
@@ -77,7 +80,8 @@ What is working:
 
 What is next:
 
-- polish `Trot`
+- immediately fix the `DogCanter` / `DogGallop` identity split after reboot
+- preserve the accepted `DogTrot` baseline while doing that work
 - then adapt the same architecture toward other animals and gaits
 
 The first gait expansion now includes speed-selected examples for `DogWalk`, `DogTrot`, `DogCanter`, and `DogGallop`, with an on-screen gait label for playtesting.

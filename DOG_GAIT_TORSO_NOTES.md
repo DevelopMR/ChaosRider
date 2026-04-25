@@ -125,6 +125,7 @@ Current code interpretation:
 - canter now uses explicit virtual contact pulses instead of the generic four-corner stance loop:
 - right hind, left hind plus right front, left front, then a short suspension
 - playtest note: the previous stronger canter read best as gallop, so current canter intentionally uses the same 1-2-1 timing with reduced support, drive, roll, pitch, and ride coupling
+- handoff warning: current canter still reads too much like gallop and needs to be softened/reframed further
 
 ## Gallop
 
@@ -160,6 +161,17 @@ Current code interpretation:
 - generic trot cadence is bypassed
 - current gallop deliberately copies the stronger previous canter feel because that was the first pattern to read as a convincing fast animal gait in playtest
 - central speed hold is reduced so the gallop identity comes from rear drive and front catch events
+- handoff warning: despite the above, current gallop still reads too much like trot in playtest and should be the first gait to reassess after reboot
+
+## Reboot Handoff
+
+First task when returning:
+
+- keep `DogWalk` and `DogTrot` stable
+- use the manual top-row gait selector for direct `CANTER` / `GALLOP` testing
+- current `DogCanter` is still too gallop-like
+- current `DogGallop` is still too trot-like
+- do not move on to destruction until this immediate gait identity problem is addressed
 
 ## Spine Flex Notes
 

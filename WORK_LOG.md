@@ -47,6 +47,7 @@
 - Restored `DogGallop` separation after canter tuning: gallop now has its own compress -> launch -> front-catch cadence and stronger audition speed/rhythm so it no longer reads as a fast trot.
 - Rebuilt canter/gallop contact logic around explicit gait footfall pulses: canter now uses a three-beat 1-2-1 virtual contact pattern, while gallop uses rear-rear, flight, front-front, flight pulses with reduced central speed-hold force.
 - Promoted the playtest-approved canter feel into `DogGallop` and tuned `DogCanter` down into a quieter lope with reduced roll, pitch, support, drive, and rider coupling.
+- Reboot handoff note: current `DogCanter` still reads too much like gallop, and current `DogGallop` still reads too much like trot; the next session should address this gait identity split before any new feature work.
 - Architectural pivot approved: we are moving from rigidbody-only buck/steer tuning toward a torso-first gait engine, with the rider treated as cargo on the animal body.
 - Added documentation for the new locomotion direction, including future `AnimalMood`, `AnimalProfile`, `GaitProfile`, and torso-only gait timing driven by virtual contact forces.
 
