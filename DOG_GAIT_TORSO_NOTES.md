@@ -4,6 +4,10 @@ Reference segment:
 
 `https://youtu.be/CR0IJsvoLic?t=564`
 
+Additional canter/gallop reference:
+
+`https://www.youtube.com/watch?v=ZSHb98-C8V4`
+
 Observed window:
 
 9:24 to 12:19
@@ -118,12 +122,14 @@ Current code interpretation:
 - phase targets are rear beat, diagonal carry, and lead-fore catch
 - canter should be rolling and slightly asymmetric without becoming a bucking or galloping motion
 - manual gait audition gives canter a base forward speed so it is tested as a calm traveling gait, not as a canter-in-place
+- canter now uses explicit virtual contact pulses instead of the generic four-corner stance loop:
+- right hind, left hind plus right front, left front, then a short suspension
 
 ## Gallop
 
 Feel:
 
-Fast, stretched, compress-and-launch gait.
+Fast, stretched, compress-and-launch gait. For dogs this should feel less like a faster trot and more like a springing body that gathers from the rear, briefly flies, catches on the front, and flies again.
 
 Torso motion:
 
@@ -132,6 +138,8 @@ Torso motion:
 - visible compress/extend body rhythm
 - greatest suspension
 - highest need for spine flex if we later split the visual torso
+- rear half and front half should feel separated by flight phases
+- the torso should lengthen into the first flight and compress as the front catches
 
 Force interpretation:
 
@@ -139,10 +147,17 @@ Force interpretation:
 - front contacts catch and redirect
 - stance windows are shorter
 - support pulses are stronger but less continuous
+- for dog-like rotary gallop, the useful prototype pattern is rear-left, rear-right, flight, front-right, front-left, flight
 
 Prototype use:
 
 Use for high-speed chaos, impacts, destruction, and rider danger.
+
+Current code interpretation:
+
+- `DogGallop` has its own pulse contacts and ride signals
+- generic trot cadence is bypassed
+- central speed hold is reduced so the gallop identity comes from rear drive and front catch events
 
 ## Spine Flex Notes
 
