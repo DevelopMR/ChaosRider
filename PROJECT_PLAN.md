@@ -181,6 +181,23 @@ Test:
 
 - locomotion feels impulse-driven rather than oscillatory
 - rider motion reads as being carried by a living torso
+- `Status: Foundational baseline reached`
+
+### Slice 6B: Trot Polish
+
+Deliverables:
+
+- polish the settled `DogTrot` baseline without destabilizing control
+- reduce residual lean/twist and remaining odd rider energy spikes
+- improve mounted readability of the trot beat
+- keep zero-speed turning intact
+
+Test:
+
+- trot still reads as a trot
+- rider stays coupled without random launches
+- zero-speed turning remains reliable
+- this baseline remains suitable as the parent model for future animals
 
 ### Slice 7: Damage And Injury Summary
 
@@ -258,11 +275,11 @@ If a system is hard to tune in the Inspector, it is too expensive for this phase
 
 ## Immediate Next Step
 
-Start the locomotion pivot first:
+Polish the settled `DogTrot` baseline first:
 
-- stub `AnimalMood`
-- define `AnimalProfile` and `GaitProfile`
-- prototype a torso-only `GaitEngine`
-- prove one recognizable reference gait before returning to destruction and summary
+- preserve the current controllable, readable trot
+- improve rider coupling and posture only where necessary
+- avoid destabilizing the zero-speed turning fix
+- use this polished trot as the parent baseline for future animal models
 
-This is the fastest route from springy motion to believable animal motion.
+This keeps the project on a stable locomotion foundation instead of reopening the architecture question.

@@ -2,18 +2,18 @@
 
 ## Now
 
-- Stub `AnimalMood`
-- Add `AnimalProfile` and `GaitProfile`
-- Build torso-only `GaitEngine` with four virtual contact points
-- Prototype first reference gait from dog timing data
-- Re-test rider stability, ejection, and ragdoll against gait-driven motion
+- Polish `DogTrot` without breaking control or zero-speed turning
+- Reduce remaining rider/ejection oddities during trot coupling
+- Improve mounted readability of the trot beat
+- Record the accepted trot baseline as the parent model for future animals
 
 ## Next
 
+- Adapt the locomotion architecture from dog reference toward a bull profile
 - Add destructible fence, barrel, and wall props
 - Track property damage and injury severity
 - Add basic end summary UI
-- Add additional animal definitions
+- Add additional animal definitions and gait profiles
 - Add rider body type variants
 - Add impact camera mode
 - Add better destruction feedback

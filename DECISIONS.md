@@ -73,3 +73,10 @@ This captures the actual gameplay fantasy: the player influences the animal, but
 
 Reason:
 Mood is a strong future design axis, but should not block the first gait engine pass.
+
+### DogTrot Baseline Accepted
+
+The torso-only `DogTrot` implementation is now accepted as the starting locomotion baseline for future models.
+
+Reason:
+It is the first version that combines recognizable trot rhythm, controllable animal behavior, working zero-speed turning, and stable enough rider coupling to support further polishing instead of more architectural resets.

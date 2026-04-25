@@ -24,7 +24,10 @@ This repo is being developed in small vertical slices. Each slice should be play
 - `Slices 4-5` now add rider stability, ejection triggers, and runtime placeholder ragdoll ejection.
 - Mounted FPV now hides overlapping placeholder body geometry in first-person to keep the ride readable.
 - Steering tuning exposed the current limit of the rigidbody-only approach.
-- The project is now pivoting toward a `Gait Engine` with virtual leg/contact forces driving a torso body.
+- The project now has a first settled `Gait Engine` baseline using a torso-only `DogTrot` reference gait.
+- Zero-speed turning is working with a dedicated idle pivot assist.
+- Rider and mounted camera are coupled to gait phase instead of floating on independent motion.
+- Rider stability and ejection are now stable enough for repeated testing without random explosive disconnects.
 - Animal `Mood` is planned as a future behavior modifier; for now animals remain obedient.
 
 ## New Locomotion Direction
@@ -54,11 +57,28 @@ That means:
 
 ## First Gait Target
 
-We will start with a torso-only dog reference gait, likely `Trot`, because:
+We started with a torso-only dog reference gait, `Trot`, because:
 
 - it has a clear and recognizable rhythm
 - diagonal pairing is easier to prototype than a full gallop
 - it should immediately feel less like spring oscillation and more like animal locomotion
+
+## Current Baseline
+
+The current locomotion baseline is now good enough to treat as the starting point for future animal models.
+
+What is working:
+
+- a recognizable trotting-dog torso rhythm
+- controllable animal behavior
+- zero-speed turning
+- mounted rider/camera coupling to gait phase
+- much more stable rider retention and less absurd ejection behavior
+
+What is next:
+
+- polish `Trot`
+- then adapt the same architecture toward other animals and gaits
 
 ## Working Rules
 

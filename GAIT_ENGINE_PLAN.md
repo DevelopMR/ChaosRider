@@ -269,6 +269,23 @@ The first pass is successful if:
 - `DogTrot` feels distinct and readable
 - the architecture clearly supports later animal profiles and gait profiles
 
+## Current Status
+
+This first pass is now considered successful enough to serve as the parent locomotion baseline.
+
+Accepted baseline qualities:
+
+- the torso reads as a trotting dog often enough to be useful
+- zero-speed turning is solved well enough for continued iteration
+- rider and mounted camera now couple to gait phase
+- rider stability and ejection are stable enough for repeated testing
+
+Immediate focus from here:
+
+- polish `DogTrot`
+- preserve the stable baseline
+- avoid destabilizing control while improving feel
+
 ## Immediate Next Step
 
 Implement a minimal torso-only `DogTrot` using:

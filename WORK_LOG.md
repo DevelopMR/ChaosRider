@@ -36,6 +36,7 @@
 - Isolated zero-speed turning as its own problem: added an explicit idle pivot assist for very low planar speeds so the grounded torso can rotate in place cleanly instead of only leaning under torque.
 - Began trot coupling: synced the mounted rider pose and first-person camera bob/tilt to the actual `DogTrot` gait phase so the human reads as carried by the animal rhythm instead of floating on an independent sine wave.
 - Tightened trot coupling stability: low stability now needs a recent real instability event before ejection, and ragdoll launch speeds are capped so failures leave the seat more naturally instead of exploding upward or far out.
+- Accepted the current `DogTrot` implementation as the first settled locomotion baseline and updated the project docs so future work can focus on `Trot` polish rather than reopening the foundation.
 - Architectural pivot approved: we are moving from rigidbody-only buck/steer tuning toward a torso-first gait engine, with the rider treated as cargo on the animal body.
 - Added documentation for the new locomotion direction, including future `AnimalMood`, `AnimalProfile`, `GaitProfile`, and torso-only gait timing driven by virtual contact forces.
 
