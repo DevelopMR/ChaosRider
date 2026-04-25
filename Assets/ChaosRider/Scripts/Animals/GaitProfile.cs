@@ -15,9 +15,9 @@ namespace ChaosRider.Animals
         public float idleThreshold = 0.08f;
 
         [Header("Gait Selection")]
-        public float walkToTrotSpeed = 1.55f;
-        public float trotToCanterSpeed = 4.6f;
-        public float canterToGallopSpeed = 8.4f;
+        public float walkToTrotSpeed = 0.7f;
+        public float trotToCanterSpeed = 1.9f;
+        public float canterToGallopSpeed = 3.8f;
 
         [Header("Contact Phase Offsets")]
         public float frontLeftPhaseOffset = 0f;

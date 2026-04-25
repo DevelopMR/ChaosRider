@@ -242,8 +242,8 @@ namespace ChaosRider.Animals
             return gaitType switch
             {
                 GaitType.DogWalk => ScaleGait(dogTrot, GaitType.DogWalk, 1.35f, 1.55f, 0.74f, 0.25f, 0.75f, 0f, 0.5f, 0.55f, 0.75f, 0.7f, 0.45f, 0.55f, 0.2f),
-                GaitType.DogCanter => ScaleGait(dogTrot, GaitType.DogCanter, 1.1f, 0.9f, 0.44f, 0.55f, 0.3f, 0.3f, 0f, 1.25f, 1.25f, 1.25f, 1.45f, 1.8f, 0.95f),
-                GaitType.DogGallop => ScaleGait(dogTrot, GaitType.DogGallop, 0.78f, 0.65f, 0.34f, 0.5f, 0.65f, 0.18f, 0f, 1.45f, 1.6f, 1.05f, 1.85f, 2.6f, 0.75f),
+                GaitType.DogCanter => ScaleGait(dogTrot, GaitType.DogCanter, 1.1f, 0.9f, 0.44f, 0.55f, 0.3f, 0.3f, 0f, 1.25f, 1.55f, 1.25f, 1.45f, 1.8f, 0.95f),
+                GaitType.DogGallop => ScaleGait(dogTrot, GaitType.DogGallop, 0.78f, 0.65f, 0.34f, 0.5f, 0.65f, 0.18f, 0f, 1.45f, 2.15f, 1.05f, 1.85f, 2.6f, 0.75f),
                 _ => dogTrot,
             };
         }
