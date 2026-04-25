@@ -50,6 +50,7 @@ namespace ChaosRider.Animals
         private Rigidbody body;
         private float gaitPhase;
         private GaitType currentGait = GaitType.Idle;
+        private float gaitSelectionVelocity;
 
         public float GaitPhase => gaitPhase;
         public GaitType CurrentGait => currentGait;
@@ -79,7 +80,12 @@ namespace ChaosRider.Animals
 
             var speedIntent = Mathf.Clamp01(Mathf.Abs(throttleInput));
             var planarSpeed = Vector3.ProjectOnPlane(body.linearVelocity, Vector3.up).magnitude;
-            currentGait = SelectGait(speedIntent, planarSpeed);
+            gaitSelectionVelocity = Mathf.MoveTowards(
+                gaitSelectionVelocity,
+                planarSpeed,
+                Mathf.Lerp(6f, 14f, speedIntent) * Time.fixedDeltaTime);
+
+            currentGait = SelectGait(speedIntent, planarSpeed, gaitSelectionVelocity);
             ApplyBodyTension(isGrounded, speedIntent, throttleInput);
 
             if (!isGrounded)
@@ -185,24 +191,44 @@ namespace ChaosRider.Animals
             return Mathf.SmoothStep(0.25f, 0.92f, arch);
         }
 
-        private GaitType SelectGait(float speedIntent, float planarSpeed)
+        private GaitType SelectGait(float speedIntent, float planarSpeed, float selectionSpeed)
         {
             if (speedIntent < gaitProfile.idleThreshold && planarSpeed <= gaitProfile.idlePivotPlanarSpeedThreshold)
             {
                 return GaitType.Idle;
             }
 
-            if (planarSpeed < gaitProfile.walkToTrotSpeed)
+            if (currentGait == GaitType.DogGallop && selectionSpeed > gaitProfile.canterToGallopSpeed * 0.8f)
+            {
+                return GaitType.DogGallop;
+            }
+
+            if (currentGait == GaitType.DogCanter && selectionSpeed > gaitProfile.trotToCanterSpeed * 0.8f)
+            {
+                return selectionSpeed >= gaitProfile.canterToGallopSpeed ? GaitType.DogGallop : GaitType.DogCanter;
+            }
+
+            if (currentGait == GaitType.DogTrot && selectionSpeed > gaitProfile.walkToTrotSpeed * 0.8f)
+            {
+                if (selectionSpeed >= gaitProfile.canterToGallopSpeed)
+                {
+                    return GaitType.DogGallop;
+                }
+
+                return selectionSpeed >= gaitProfile.trotToCanterSpeed ? GaitType.DogCanter : GaitType.DogTrot;
+            }
+
+            if (selectionSpeed < gaitProfile.walkToTrotSpeed)
             {
                 return GaitType.DogWalk;
             }
 
-            if (planarSpeed < gaitProfile.trotToCanterSpeed)
+            if (selectionSpeed < gaitProfile.trotToCanterSpeed)
             {
                 return GaitType.DogTrot;
             }
 
-            if (planarSpeed < gaitProfile.canterToGallopSpeed)
+            if (selectionSpeed < gaitProfile.canterToGallopSpeed)
             {
                 return GaitType.DogCanter;
             }
@@ -241,7 +267,7 @@ namespace ChaosRider.Animals
 
             return gaitType switch
             {
-                GaitType.DogWalk => ScaleGait(dogTrot, GaitType.DogWalk, 1.35f, 1.55f, 0.74f, 0.25f, 0.75f, 0f, 0.5f, 0.55f, 0.75f, 0.7f, 0.45f, 0.55f, 0.2f),
+                GaitType.DogWalk => ScaleGait(dogTrot, GaitType.DogWalk, 1.35f, 1.55f, 0.74f, 0.25f, 0.75f, 0f, 0.5f, 0.55f, 1.25f, 0.7f, 0.45f, 0.55f, 0.2f),
                 GaitType.DogCanter => ScaleGait(dogTrot, GaitType.DogCanter, 1.1f, 0.9f, 0.44f, 0.55f, 0.3f, 0.3f, 0f, 1.25f, 1.55f, 1.25f, 1.45f, 1.8f, 0.95f),
                 GaitType.DogGallop => ScaleGait(dogTrot, GaitType.DogGallop, 0.78f, 0.65f, 0.34f, 0.5f, 0.65f, 0.18f, 0f, 1.45f, 2.15f, 1.05f, 1.85f, 2.6f, 0.75f),
                 _ => dogTrot,

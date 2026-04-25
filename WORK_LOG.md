@@ -39,6 +39,7 @@
 - Accepted the current `DogTrot` implementation as the first settled locomotion baseline and updated the project docs so future work can focus on `Trot` polish rather than reopening the foundation.
 - Studied the referenced dog gait segment for torso motion, documented walk/trot/canter/gallop translation notes, expanded the gait engine to speed-select example dog gaits, and added a large on-screen gait label for playtesting.
 - Rebalanced the example gait ladder for the real prototype speed envelope: lowered the speed thresholds for gait transitions and increased faster-gait drive scaling so `TROT`, `CANTER`, and `GALLOP` can actually be reached in play.
+- Fixed a `WALK` self-lock issue: gait selection now uses a smoothed selection speed with hysteresis, `WALK` has more drive to climb out of itself, and the on-screen overlay now includes current speed for faster tuning.
 - Architectural pivot approved: we are moving from rigidbody-only buck/steer tuning toward a torso-first gait engine, with the rider treated as cargo on the animal body.
 - Added documentation for the new locomotion direction, including future `AnimalMood`, `AnimalProfile`, `GaitProfile`, and torso-only gait timing driven by virtual contact forces.
 

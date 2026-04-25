@@ -10,11 +10,13 @@ namespace ChaosRider.Animals
         [SerializeField] private Vector2 screenPosition = new Vector2(24f, 20f);
 
         private GaitEngine gaitEngine;
+        private Rigidbody body;
         private GUIStyle labelStyle;
 
         private void Awake()
         {
             gaitEngine = GetComponent<GaitEngine>();
+            body = GetComponent<Rigidbody>();
         }
 
         private void OnGUI()
@@ -38,6 +40,11 @@ namespace ChaosRider.Animals
             GUI.Label(
                 new Rect(screenPosition.x, screenPosition.y, 500f, 80f),
                 gaitEngine.CurrentGaitLabel.ToUpperInvariant(),
+                labelStyle);
+
+            GUI.Label(
+                new Rect(screenPosition.x, screenPosition.y + 52f, 500f, 40f),
+                $"Speed {(body != null ? body.linearVelocity.magnitude : 0f):0.00}",
                 labelStyle);
         }
     }
